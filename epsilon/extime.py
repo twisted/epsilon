@@ -830,6 +830,3 @@ class Time(object):
         if not isinstance(subtrahend, datetime.timedelta):
             raise TypeError, 'expected a datetime.timedelta instance'
         return Time.fromDatetime(self._time - subtrahend)
-
-import axiom
-axiom.Time = Time
