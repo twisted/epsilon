@@ -28,3 +28,9 @@ class VersionsTest(unittest.TestCase):
                           cmp,
                           Version("dummy", 1, 0, 0),
                           Version("dumym", 1, 0, 0))
+
+    def testRepr(self):
+        repr(Version("dummy", 1, 2, 3))
+
+    def testStr(self):
+        str(Version("dummy", 1, 2, 3))
