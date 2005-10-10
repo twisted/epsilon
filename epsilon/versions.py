@@ -15,12 +15,16 @@ class Version(object):
         self.micro = micro
 
     def __repr__(self):
-        return '%s(%r, %d, %d, %d)' % (
+        svnver = self._formatSVNVersion()
+        if svnver:
+            svnver = '  #' + svnver
+        return '%s(%r, %d, %d, %d)%s' % (
             self.__class__.__name__,
             self.package,
             self.major,
             self.minor,
-            self.micro)
+            self.micro,
+            svnver)
 
     def __str__(self):
         return '[%s, version %d.%d.%d%s]' % (
