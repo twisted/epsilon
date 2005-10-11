@@ -10,11 +10,11 @@ setup(
     license="MIT",
     platforms=["any"],
     description="A set of utility modules used by Divmod projects",
-    classifiers=(
+    classifiers=[
         "Intended Audience :: Developers",
         "Programming Language :: Python",
         "Development Status :: 2 - Pre-Alpha",
-        "Topic :: Utilities"),
+        "Topic :: Utilities"],
 
     packages=['epsilon',
               'epsilon.test'])
