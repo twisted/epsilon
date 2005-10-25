@@ -1,4 +1,7 @@
+# -*- test-case-name: epsilon.test.test_modes -*-
+
 import new
+
 class ModalMethod(object):
     """A descriptor wrapping multiple implementations of a particular method.
 
