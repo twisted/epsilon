@@ -1,0 +1,3 @@
+x.x.x (dd-mm-yyyy):
+  - Added epsilon.modal.ModalType, metaclass for writing classes that
+    behave in some respects like state machines
