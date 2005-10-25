@@ -14,6 +14,14 @@ class Version(object):
         self.minor = minor
         self.micro = micro
 
+    def short(self):
+        """
+        Return a string in canonical short version format, <major>.<minor>.<micro>.
+        """
+        return '%d.%d.%d' % (self.major,
+                             self.minor,
+                             self.micro)
+
     def __repr__(self):
         svnver = self._formatSVNVersion()
         if svnver:
