@@ -34,3 +34,7 @@ class VersionsTest(unittest.TestCase):
 
     def testStr(self):
         str(Version("dummy", 1, 2, 3))
+
+    def testShort(self):
+        self.assertEquals(Version('dummy', 1, 2, 3).short(),
+                          '1.2.3')
