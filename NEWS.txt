@@ -1,3 +1,3 @@
-x.x.x (dd-mm-yyyy):
+0.2.0 (2005-10-25):
   - Added epsilon.modal.ModalType, metaclass for writing classes that
     behave in some respects like state machines
