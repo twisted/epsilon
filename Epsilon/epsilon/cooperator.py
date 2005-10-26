@@ -20,13 +20,17 @@ class Cooperator(object):
     I am a task scheduler for cooperative tasks.
     """
 
-    def __init__(self, terminationPredicateFactory=_Timer, scheduler=_defaultScheduler):
+    def __init__(self,
+                 terminationPredicateFactory=_Timer,
+                 scheduler=_defaultScheduler,
+                 started=True):
         self.iterators = []
         self._metarator = iter(())
         self._terminationPredicateFactory = terminationPredicateFactory
         self._scheduler = scheduler
         self._delayedCall = None
         self._stopped = False
+        self._started = started
 
     def coiterate(self, iterator, doneDeferred=None):
         """Add an iterator to the list of iterators I am currently running.
@@ -69,13 +73,26 @@ class Cooperator(object):
                 if isinstance(result, defer.Deferred):
                     self.iterators.remove(taskObj)
                     result.addCallbacks(
-                        lambda whatever, pythonShouldHaveClosures=taskObj: self.coiterate(*pythonShouldHaveClosures) and None,
-                        lambda anError, noSeriouslyIMeanIt=doneDeferred.errback: noSeriouslyIMeanIt(anError))
+                        lambda whatever, pythonShouldHaveClosures=taskObj:
+                        self.coiterate(*pythonShouldHaveClosures) and None,
+                        lambda anError, noSeriouslyIMeanIt=doneDeferred.errback:
+                        noSeriouslyIMeanIt(anError))
         self._reschedule()
 
+    _mustScheduleOnStart = False
     def _reschedule(self):
+        if not self._started:
+            self._mustScheduleOnStart = True
+            return
         if self._delayedCall is None and self.iterators:
             self._delayedCall = self._scheduler(self._tick)
+
+    def start(self):
+        self._stopped = False
+        self._started = True
+        if self._mustScheduleOnStart:
+            del self._mustScheduleOnStart
+            self._reschedule()
 
     def stop(self):
         self._stopped = True
@@ -96,3 +113,20 @@ _theCooperator = Cooperator()
 def iterateInReactor(i, delay=None):
     return _theCooperator.coiterate(i)
 
+from twisted.application.service import Service
+
+class SchedulingService(Service):
+    """
+    Simple L{IService} implementation.
+    """
+    def __init__(self):
+        self.coop = Cooperator(started=False)
+
+    def addIterator(self, iterator):
+        return self.coop.coiterate(iterator)
+
+    def startService(self):
+        self.coop.start()
+
+    def stopService(self):
+        self.coop.stop()
