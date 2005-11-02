@@ -1,3 +1,6 @@
+0.3.0 (2005-11-02):
+  - Added SchedulingService to epsilon.cooperator
+
 0.2.1 (2005-10-25):
   - Added 'short()' to epsilon.versions.Version
   - fixed setup.py to use epsilon.version.short() rather than static string.
