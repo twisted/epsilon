@@ -1,19 +1,37 @@
+# -*- test-case-name: epsilon.test.test_setuphelper -*-
 
 # For great justice, take off every zig.
-import sys, os, pprint
+import sys, os, pprint, traceback
 
 from distutils.core import setup
+
+def pluginModules(*moduleNames):
+    from twisted.python.reflect import namedAny
+    for moduleName in moduleNames:
+        try:
+            yield namedAny(moduleName)
+        except ImportError:
+            pass
+        except ValueError, ve:
+            if ve.args[0] != 'Empty module name':
+                traceback.print_exc()
+        except:
+            traceback.print_exc()
+
+def _regeneratePluginCache():
+    print 'Regenerating cache with path: ',
+    pprint.pprint(sys.path)
+    from twisted import plugin
+    for pluginModule in pluginModules("axiom.plugins",
+                                      "mantissa.plugins"):
+        # Not just *some* zigs, mind you - *every* zig:
+        print 'Full plugin list for %r: ' % (pluginModule.__name__)
+        pprint.pprint(list(plugin.getPlugins(plugin.IPlugin, pluginModule)))
 
 def regeneratePluginCache(dist):
     if 'install' in dist.commands:
         sys.path.insert(0, dist.command_obj['install'].install_lib)
-        print 'Regenerating cache with path: ',
-        pprint.pprint(sys.path)
-        from twisted import plugin
-        from axiom import plugins
-        # Not just *some* zigs, mind you - *every* zig:
-        print 'Full plugin list: ',
-        pprint.pprint(list(plugin.getPlugins(plugin.IPlugin, plugins)))
+        _regeneratePluginCache()
 
 def autosetup(**kw):
     packages = []
