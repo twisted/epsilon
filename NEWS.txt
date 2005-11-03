@@ -1,3 +1,6 @@
+0.3.1 (2005-11-02):
+  - Removed bogus dependency on Axiom.
+
 0.3.0 (2005-11-02):
   - Added SchedulingService, an IService implementation, to epsilon.cooperator
   - Added autosetup, a utility to actually include files in distutils releases,
