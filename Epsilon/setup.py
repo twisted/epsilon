@@ -1,9 +1,7 @@
 
-from distutils.core import setup
+from epsilon import version, setuphelper
 
-from epsilon import version
-
-setup(
+setuphelper.autosetup(
     name="Epsilon",
     version=version.short(),
     maintainer="Divmod, Inc.",
@@ -17,6 +15,4 @@ setup(
         "Programming Language :: Python",
         "Development Status :: 2 - Pre-Alpha",
         "Topic :: Utilities"],
-
-    packages=['epsilon',
-              'epsilon.test'])
+    )
