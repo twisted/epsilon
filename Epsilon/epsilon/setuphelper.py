@@ -23,7 +23,7 @@ def _regeneratePluginCache():
     pprint.pprint(sys.path)
     from twisted import plugin
     for pluginModule in pluginModules("axiom.plugins",
-                                      "mantissa.plugins"):
+                                      "xmantissa.plugins"):
         # Not just *some* zigs, mind you - *every* zig:
         print 'Full plugin list for %r: ' % (pluginModule.__name__)
         pprint.pprint(list(plugin.getPlugins(plugin.IPlugin, pluginModule)))
