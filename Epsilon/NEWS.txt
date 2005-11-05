@@ -1,4 +1,4 @@
-x.x.x (yyyy-mm-dd):
+0.3.2 (2005-11-05):
   - Added automatic support for Twisted plugins to autosetup
 
 0.3.1 (2005-11-02):
