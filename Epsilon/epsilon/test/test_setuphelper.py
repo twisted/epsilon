@@ -34,7 +34,7 @@ class TestCacheRegeneration(unittest.TestCase):
     def testRegeneratingIt(self):
         for mod in self.removedModules:
             self.failIf(mod.__name__ in sys.modules, 'Started with %r loaded: %r' % (mod.__name__, sys.path))
-        _regeneratePluginCache()
+        _regeneratePluginCache(['axiom', 'xmantissa'])
         log.flushErrors(ImportError) # This is necessary since there are Axiom
                                      # plugins that depend on Mantissa, so when
                                      # Axiom is installed, Mantissa-dependent
