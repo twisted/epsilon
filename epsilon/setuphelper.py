@@ -5,7 +5,7 @@ import sys, os, pprint, traceback
 
 from distutils.core import setup
 
-def pluginModules(*moduleNames):
+def pluginModules(moduleNames):
     from twisted.python.reflect import namedAny
     for moduleName in moduleNames:
         try:
@@ -18,35 +18,43 @@ def pluginModules(*moduleNames):
         except:
             traceback.print_exc()
 
-def _regeneratePluginCache():
+def _regeneratePluginCache(pluginPackages):
     print 'Regenerating cache with path: ',
     pprint.pprint(sys.path)
     from twisted import plugin
-    for pluginModule in pluginModules("axiom.plugins",
-                                      "xmantissa.plugins"):
+    for pluginModule in pluginModules([
+        p + ".plugins" for p in pluginPackages]):
         # Not just *some* zigs, mind you - *every* zig:
         print 'Full plugin list for %r: ' % (pluginModule.__name__)
         pprint.pprint(list(plugin.getPlugins(plugin.IPlugin, pluginModule)))
 
-def regeneratePluginCache(dist):
+def regeneratePluginCache(dist, pluginPackages):
     if 'install' in dist.commands:
         sys.path.insert(0, dist.command_obj['install'].install_lib)
-        _regeneratePluginCache()
+        _regeneratePluginCache(pluginPackages)
 
 def autosetup(**kw):
     packages = []
     datafiles = {}
+    pluginPackages = []
 
     for (dirpath, dirnames, filenames) in os.walk(os.curdir):
         dirnames[:] = [p for p in dirnames if not p.startswith('.')]
+        pkgName = dirpath[2:].replace('/', '.')
         if '__init__.py' in filenames:
             # The current directory is a Python package
-            packages.append(dirpath[2:].replace('/', '.'))
+            packages.append(pkgName)
+        elif 'plugins' in dirnames:
+            # The current directory is for the Twisted plugin system
+            pluginPackages.append(pkgName)
+            packages.append(pkgName)
+
     for package in packages:
         if '.' in package:
             continue
         D = datafiles[package] = []
-        print os.listdir(package)
+        print 'Files in package %r:' % (package,)
+        pprint.pprint(os.listdir(package))
         for (dirpath, dirnames, filenames) in os.walk(package):
             dirnames[:] = [p for p in dirnames if not p.startswith('.')]
             for filename in filenames:
@@ -65,5 +73,5 @@ def autosetup(**kw):
     assert 'package_data' not in kw
     kw.update(autoresult)
     distobj = setup(**kw)
-    regeneratePluginCache(distobj)
+    regeneratePluginCache(distobj, pluginPackages)
     return distobj
