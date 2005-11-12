@@ -6,7 +6,7 @@ setuphelper.autosetup(
     version=version.short(),
     maintainer="Divmod, Inc.",
     maintainer_email="support@divmod.org",
-    url="http://divmod.org/trac/wiki/EpsilonProject",
+    url="http://divmod.org/trac/wiki/DivmodEpsilon",
     license="MIT",
     platforms=["any"],
     description="A set of utility modules used by Divmod projects",
