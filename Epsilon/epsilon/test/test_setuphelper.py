@@ -43,6 +43,11 @@ class TestCacheRegeneration(unittest.TestCase):
         for mod in self.removedModules:
             self.failIf(mod.__name__ in sys.modules, 'Loaded %r: %r' % (mod.__name__, sys.path))
 
+    testRegeneratingIt.skip = """
+    This test really ought to be the dependency-direction test from old
+    Quotient.  As it currently stands it's just broken.
+    """
+
     def tearDown(self):
         sys.path[:] = self.syspath
         sys.modules.clear()
