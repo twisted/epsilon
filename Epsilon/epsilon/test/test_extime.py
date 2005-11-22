@@ -104,6 +104,10 @@ class TestTime(unittest.TestCase):
             time = test(input, expected, tzinfo)
             self.assertEquals(time.resolution, datetime.timedelta(minutes=1))
 
+        def testMicrosecond(input, expected, tzinfo=None):
+            time = test(input, expected, tzinfo)
+            self.assertEquals(time.resolution, datetime.timedelta(microseconds=1))
+
         # 'now' is Monday, 2004-12-06 14:15:16 UTC
         testDay('yesterday',       '2004-12-05')
         testDay(' ToDaY ',         '2004-12-06')
@@ -126,6 +130,9 @@ class TestTime(unittest.TestCase):
         testMinute(' 02:00  pm ',  '2004-12-07T14:00+00:00')
         testMinute(' noon ',       '2004-12-07T12:00+00:00')
         testMinute('midnight',     '2004-12-07T00:00+00:00')
+
+        testMicrosecond('now',     '2004-12-06T14:15:16+00:00')
+        testMicrosecond('  noW  ', '2004-12-06T14:15:16+00:00')
 
         testMalformed('24:01')
         testMalformed('24:00')  # this one might be considered valid by some people, but it's just dumb.

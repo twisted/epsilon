@@ -200,6 +200,9 @@ class Time(object):
         self.resolution = datetime.timedelta(minutes=1)
         return self
 
+    def _fromNow(klass, match, tzinfo, now):
+        # coerce our 'now' argument to an instant
+        return now + datetime.timedelta(0)
 
     weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
@@ -230,12 +233,15 @@ class Time(object):
             _fromTime),
         (re.compile(r"\b(noon|midnight)\b", re.IGNORECASE),
             _fromNoonOrMidnight),
+        (re.compile(r"\b(now)\b", re.IGNORECASE),
+            _fromNow),
     ]
 
     _fromWeekday = classmethod(_fromWeekday)
     _fromTodayOrTomorrow = classmethod(_fromTodayOrTomorrow)
     _fromTime = classmethod(_fromTime)
     _fromNoonOrMidnight = classmethod(_fromNoonOrMidnight)
+    _fromNow = classmethod(_fromNow)
 
 
     def fromHumanly(klass, humanStr, tzinfo=None, now=None):
