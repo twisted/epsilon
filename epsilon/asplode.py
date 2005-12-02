@@ -1,5 +1,6 @@
 
 import sys, os
+from datetime import date
 
 def status(x):
     sys.stderr.write(x+'\n')
@@ -10,6 +11,7 @@ def splode(linerator, proj, capproj):
     for line in linerator:
         line = line.replace('_project_', proj)
         line = line.replace('_Project_', capproj)
+        line = line.replace('_date_', str(date.today()))
         ls = line.split("###file:")
         if len(ls) > 1:
             fname = ls[1].strip()
