@@ -1,4 +1,9 @@
 x.x.x (yyyy-mm-dd):
+  - Disabled crazy sys.modules hackery in test_setuphelper
+  - Added module for creating a directory structure from a string template
+  - Added support for 'now' to Time.fromHumanly()
+  - Added a structured "hotfix" system to abstract and formalize monkey
+    patches and version testing logic away from code which requires it.
 
 0.3.2 (2005-11-05):
   - Added automatic support for Twisted plugins to autosetup
