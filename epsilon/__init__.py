@@ -2,4 +2,4 @@
 
 from epsilon.versions import Version
 
-version = Version(__name__, 0, 3, 2)
+version = Version(__name__, 0, 4, 0)
