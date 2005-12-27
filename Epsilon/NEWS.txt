@@ -1,3 +1,5 @@
+x.x.x (YYYY-MM-DD):
+
 0.4.0 (2005-12-20):
   - Disabled crazy sys.modules hackery in test_setuphelper
   - Added module for creating a directory structure from a string template
