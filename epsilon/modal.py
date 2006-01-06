@@ -2,6 +2,8 @@
 
 import new
 
+from twisted.python import reflect
+
 class ModalMethod(object):
     """A descriptor wrapping multiple implementations of a particular method.
 
@@ -47,6 +49,38 @@ class mode(object):
     subclass should have the same name as the mode it is defining.
     """
 
+    # XXX fix the simple, but wrong, __dict__ magic in ModalType.__new__ so
+    # that this __enter__ and __exit__ are actually called, maybe we can even
+    # do some logging or something.
+
+    def __exit__(self):
+        """
+        The mode has just been exited.
+        """
+
+    def __enter__(self):
+        """
+        The mode has just been entered.
+        """
+
+def _getInheritedAttribute(classname, attrname, bases, attrs):
+    try:
+        return attrs[attrname]
+    except KeyError:
+        for base in bases:
+            try:
+                return _getInheritedAttribute(classname, attrname,
+                                              base.__bases__,
+                                              base.__dict__)
+            except TypeError:
+                pass
+        else:
+            raise TypeError('%r does not define required attribute %r' %
+                            (classname,
+                             attrname))
+
+
+
 class ModalType(type):
     """Metaclass for defining modal classes.
 
@@ -59,18 +93,8 @@ class ModalType(type):
     @ivar initialMode: The mode in which instances will start.
     """
     def __new__(cls, name, bases, attrs):
-        try:
-            # XXX This is wrong: it does not respect inherited
-            # mode attribute settings.  Fix it when someone wants
-            # inherited mode attributes to work.
-            modeAttribute = attrs.pop('modeAttribute')
-        except KeyError:
-            raise TypeError("%r does not define required modeAttribute." % (name,))
-
-        try:
-            initialMode = attrs['initialMode']
-        except KeyError:
-            raise TypeError("%r does not defing require initialMode." % (name,))
+        modeAttribute = _getInheritedAttribute(name, 'modeAttribute', bases, attrs)
+        initialMode = attrs['initialMode'] = _getInheritedAttribute(name, 'initialMode', bases, attrs)
 
         # Dict mapping names of methods to another dict.  The inner
         # dict maps names of modes to implementations of that method
@@ -82,10 +106,27 @@ class ModalType(type):
             if isinstance(v, type) and issubclass(v, mode):
                 for (methName, methDef) in v.__dict__.iteritems():
                     implementations.setdefault(methName, {})[k] = methDef
-            else:
-                keepAttrs[k] = v
+            keepAttrs[k] = v
 
         for (methName, methDefs) in implementations.iteritems():
             keepAttrs[methName] = ModalMethod(methName, methDefs, modeAttribute)
 
         return super(ModalType, cls).__new__(cls, name, bases, keepAttrs)
+
+class Modal(object):
+
+    __metaclass__ = ModalType
+    modeAttribute = 'mode'
+    initialMode = 'nil'
+
+    class nil(mode):
+        def __enter__(self):
+            pass
+        def __exit__(self):
+            pass
+
+    def transitionTo(self, stateName):
+        self.__exit__()
+        self.mode = stateName
+        self.__enter__()
+
