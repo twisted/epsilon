@@ -7,6 +7,7 @@ from epsilon import cooperator
 class TestCooperator(unittest.TestCase):
     RESULT = 'done'
 
+
     def ebIter(self, err):
         err.trap(cooperator.SchedulerStopped)
         return self.RESULT
@@ -16,13 +17,15 @@ class TestCooperator(unittest.TestCase):
     def testStoppedRejectsNewTasks(self):
         """Test that Cooperators refuse new tasks when they have been stopped.
         """
-        for stuff in (None, defer.Deferred()):
+        def testwith(stuff):
             c = cooperator.Cooperator()
             c.stop()
             d = c.coiterate(iter(()), stuff)
             d.addCallback(self.cbIter)
             d.addErrback(self.ebIter)
-            self.assertEquals(util.wait(d), self.RESULT)
+            return d.addCallback(lambda result:
+                                 self.assertEquals(result, self.RESULT))
+        return testwith(None).addCallback(lambda ign: testwith(defer.Deferred()))
 
     def testStopRunning(self):
         """test that a running iterator will not run to completion when the cooperator
@@ -36,8 +39,11 @@ class TestCooperator(unittest.TestCase):
         d.addCallback(self.cbIter)
         d.addErrback(self.ebIter)
         c.stop()
-        self.assertEquals(util.wait(d), self.RESULT)
-        self.assertEquals(myiter.value, -1)
+        def doasserts(result):
+            self.assertEquals(result, self.RESULT)
+            self.assertEquals(myiter.value, -1)
+        d.addCallback(doasserts)
+        return d
 
     def testStopOutstanding(self):
         """Test that a running iterator paused on a third-party Deferred will properly
@@ -59,7 +65,7 @@ class TestCooperator(unittest.TestCase):
         d.addCallback(self.cbIter)
         d.addErrback(self.ebIter)
 
-        self.assertEquals(util.wait(d), self.RESULT)
+        return d.addCallback(lambda result: self.assertEquals(result, self.RESULT))
 
     def testUnexpectedError(self):
         c = cooperator.Cooperator()
@@ -69,7 +75,7 @@ class TestCooperator(unittest.TestCase):
             else:
                 raise RuntimeError()
         d = c.coiterate(myiter())
-        self.assertRaises(RuntimeError, util.wait, d)
+        return self.assertFailure(d, RuntimeError)
 
     def testUnexpectedErrorActuallyLater(self):
         def myiter():
@@ -79,7 +85,7 @@ class TestCooperator(unittest.TestCase):
 
         c = cooperator.Cooperator()
         d = c.coiterate(myiter())
-        self.assertRaises(RuntimeError, util.wait, d)
+        return self.assertFailure(d, RuntimeError)
 
     def testUnexpectedErrorNotActuallyLater(self):
         def myiter():
@@ -87,7 +93,7 @@ class TestCooperator(unittest.TestCase):
 
         c = cooperator.Cooperator()
         d = c.coiterate(myiter())
-        self.assertRaises(RuntimeError, util.wait, d)
+        return self.assertFailure(d, RuntimeError)
 
     def testCooperation(self):
         L = []
@@ -103,9 +109,8 @@ class TestCooperator(unittest.TestCase):
         for stuff in groupsOfThings:
             tasks.append(c.coiterate(myiter(stuff)))
 
-        util.wait(defer.DeferredList(tasks))
-
-        self.assertEquals(tuple(L), sum(zip(*groupsOfThings), ()))
+        return defer.DeferredList(tasks).addCallback(
+            lambda ign: self.assertEquals(tuple(L), sum(zip(*groupsOfThings), ())))
 
     def testResourceExhaustion(self):
         output = []
