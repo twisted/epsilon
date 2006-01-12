@@ -718,7 +718,7 @@ class Time(object):
             res = str(dtime.date().day) + ' ' + res
             return res
         else:
-            res = dtime.strftime('%b %y, %I:%M %p').lower().capitalize()
+            res = dtime.strftime('%b %Y, %I:%M %p').lower().capitalize()
             res = str(dtime.date().day) + ' ' + res
             return res
 
