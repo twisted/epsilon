@@ -1,4 +1,6 @@
 x.x.x (YYYY-MM-DD):
+  - Replaced '%y' with '%Y' in Time.asHumanly() output - the year is now
+    four digits, rather than two.
 
 0.4.0 (2005-12-20):
   - Disabled crazy sys.modules hackery in test_setuphelper

@@ -281,13 +281,13 @@ class TestTime(unittest.TestCase):
 
         self.assertEquals(
             self._createReference().asHumanly(now=extime.Time.fromStructTime((2005, 12, 6, 14, 15, 16, 0, 0, 0))),
-            '6 Dec 04, 02:15 pm' )
+            '6 Dec 2004, 02:15 pm' )
         self.assertEquals(
             self._createReference().asHumanly(tzinfo=self.MST(), now=extime.Time.fromStructTime((2005, 12, 6, 14, 15, 16, 0, 0, 0))),
-            '6 Dec 04, 07:15 am' )
+            '6 Dec 2004, 07:15 am' )
         self.assertEquals(
             self._createReference().asHumanly(tzinfo=self.CET(), now=extime.Time.fromStructTime((2005, 12, 6, 14, 15, 16, 0, 0, 0))),
-            '6 Dec 04, 03:15 pm' )
+            '6 Dec 2004, 03:15 pm' )
 
         allDay = extime.Time.fromISO8601TimeAndDate('2005-123')
         self.assertEquals(allDay.asHumanly(now=allDay), 'all day')
