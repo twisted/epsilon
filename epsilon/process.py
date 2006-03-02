@@ -1,7 +1,9 @@
+# -*- test-case-name: epsilon.test.test_process -*-
+
 import os, sys, imp, sets
 
-
 from twisted.internet import reactor
+
 def spawnProcess(processProtocol, executable, args=(), env={},
                  path=None, uid=None, gid=None, usePTY=0,
                  packages=()):
