@@ -105,7 +105,8 @@ class ModalType(type):
         for (k, v) in attrs.iteritems():
             if isinstance(v, type) and issubclass(v, mode):
                 for (methName, methDef) in v.__dict__.iteritems():
-                    implementations.setdefault(methName, {})[k] = methDef
+                    if methName not in ('__module__', '__file__', '__name__'):
+                        implementations.setdefault(methName, {})[k] = methDef
             keepAttrs[k] = v
 
         for (methName, methDefs) in implementations.iteritems():
