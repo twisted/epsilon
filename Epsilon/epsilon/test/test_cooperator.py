@@ -1,6 +1,6 @@
 
 from twisted.internet import reactor, defer
-from twisted.trial import unittest, util
+from twisted.trial import unittest
 
 from epsilon import cooperator
 
