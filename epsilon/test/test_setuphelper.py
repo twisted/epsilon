@@ -4,7 +4,7 @@ import sys
 from twisted.trial import unittest
 from twisted.python import log
 from twisted.python.reflect import namedAny
-from epsilon.setuphelper import _regeneratePluginCache, pluginModules
+from epsilon.setuphelper import _regeneratePluginCache
 
 class TestCacheRegeneration(unittest.TestCase):
     removeModules = []

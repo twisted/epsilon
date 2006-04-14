@@ -2,8 +2,6 @@
 
 import new
 
-from twisted.python import reflect
-
 class ModalMethod(object):
     """A descriptor wrapping multiple implementations of a particular method.
 
