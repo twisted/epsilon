@@ -15,4 +15,4 @@ setuphelper.autosetup(
         "Programming Language :: Python",
         "Development Status :: 2 - Pre-Alpha",
         "Topic :: Utilities"],
-    )
+    scripts=['bin/benchmark'])

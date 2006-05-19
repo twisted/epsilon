@@ -1,4 +1,6 @@
 
+import inspect
+
 class NoSuchHotfix(Exception):
     """
     Man you must be pretty stupid.
@@ -14,6 +16,17 @@ def require(packageName, fixName):
         if filepath.FilePath('a') != filepath.FilePath('a'):
             from epsilon.hotfixes import filepath_copyTo
             filepath_copyTo.install()
+    elif (packageName, fixName) == ('twisted', 'timeoutmixin_calllater'):
+        from twisted.protocols import policies
+        if not hasattr(policies.TimeoutMixin, 'callLater'):
+            from epsilon.hotfixes import timeoutmixin_calllater
+            timeoutmixin_calllater.install()
+    elif (packageName, fixName) == ('twisted', 'delayedcall_seconds'):
+        from twisted.internet import base
+        args = inspect.getargs(base.DelayedCall.__init__.func_code)[0]
+        if 'seconds' not in args:
+            from epsilon.hotfixes import delayedcall_seconds
+            delayedcall_seconds.install()
     else:
         raise NoSuchHotfix(packageName, fixName)
 
