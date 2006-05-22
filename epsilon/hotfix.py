@@ -27,6 +27,19 @@ def require(packageName, fixName):
         if 'seconds' not in args:
             from epsilon.hotfixes import delayedcall_seconds
             delayedcall_seconds.install()
+    elif (packageName, fixName) == ('twisted', 'deferredgenerator_tfailure'):
+        from twisted.internet import defer
+        result = []
+        def test():
+            d = defer.waitForDeferred(defer.succeed(1))
+            yield d
+            result.append(d.getResult())
+        defer.deferredGenerator(test)()
+        if result == [1]:
+            from epsilon.hotfixes import deferredgenerator_tfailure
+            deferredgenerator_tfailure.install()
+        else:
+            assert reuslt == [None]
     else:
         raise NoSuchHotfix(packageName, fixName)
 
