@@ -286,6 +286,13 @@ def formatResults(name, sectorSize, before, after, error, timeout):
         read_ms = None
         write_ms = None
 
+    twisted_version = twisted.version._getSVNVersion()
+    if twisted_version is None:
+        twisted_version = twisted.version.short()
+    epsilon_version = epsilon.version._getSVNVersion()
+    if epsilon_version is None:
+        epsilon_version = epsilon.version.short()
+
     Results(
         version=STATS_VERSION,
         error=error,
@@ -302,8 +309,8 @@ def formatResults(name, sectorSize, before, after, error, timeout):
         write_ms=write_ms,
         filesystem_growth=after.size - before.size,
         python_version=unicode(sys.hexversion),
-        twisted_version=twisted.version._getSVNVersion(),
-        divmod_version=epsilon.version._getSVNVersion(),
+        twisted_version=twisted_version,
+        divmod_version=epsilon_version,
         ).do(jj, requiresAnswer=False)
     return output.getvalue()
 
