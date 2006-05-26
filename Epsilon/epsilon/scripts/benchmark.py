@@ -15,8 +15,8 @@ from twisted.protocols import policies
 import epsilon
 from epsilon import structlike
 
-from vertex import juice
-from vertex.test import utils
+from epsilon import juice
+from epsilon.test import utils
 
 
 class diskstat(structlike.record(
