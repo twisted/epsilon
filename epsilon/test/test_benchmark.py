@@ -11,7 +11,7 @@ from twisted.python import failure, filepath
 
 from epsilon.scripts import benchmark
 
-from vertex import juice
+from epsilon import juice
 
 
 class DiskstatTestCase(unittest.TestCase):
