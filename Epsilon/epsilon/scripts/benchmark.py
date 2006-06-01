@@ -5,10 +5,10 @@ Functions for running a Python file in a child process and recording resource
 usage information and other statistics about it.
 """
 
-import os, time, sys, socket, StringIO, pprint
+import os, time, sys, socket, StringIO, pprint, errno
 
 import twisted
-from twisted.python import log, filepath, failure
+from twisted.python import log, filepath, failure, util
 from twisted.internet import reactor, protocol, error, defer
 from twisted.protocols import policies
 
@@ -106,15 +106,19 @@ class ProcessDied(Exception):
 
 
 
-class StupidProcess(protocol.ProcessProtocol, policies.TimeoutMixin):
+class BasicProcess(protocol.ProcessProtocol, policies.TimeoutMixin):
     """
     The simplest possible process protocol.  It doesn't do anything except what
     is absolutely mandatory of any conceivable ProcessProtocol.
     """
     timedOut = False
 
-    def __init__(self, whenFinished):
+    BACKCHANNEL_OUT = 3
+    BACKCHANNEL_IN = 4
+
+    def __init__(self, whenFinished, path):
         self.whenFinished = whenFinished
+        self.path = path
         self.output = []
 
 
@@ -146,7 +150,7 @@ class StupidProcess(protocol.ProcessProtocol, policies.TimeoutMixin):
         d, self.whenFinished = self.whenFinished, None
         o, self.output = self.output, None
         if reason.check(error.ProcessDone):
-            d.callback((reason.value.status, o))
+            d.callback((self, reason.value.status, o))
         elif self.timedOut:
             d.errback(error.TimeoutError())
         elif reason.check(error.ProcessTerminated):
@@ -159,37 +163,124 @@ class StupidProcess(protocol.ProcessProtocol, policies.TimeoutMixin):
         self.setTimeout(None)
 
 
+    def spawn(cls, executable, args, path, env, spawnProcess=None):
+        """
+        Run an executable with some arguments in the given working directory with
+        the given environment variables.
 
-def spawn(executable, args, path, env, spawnProcess=None):
+        Returns a Deferred which fires with a two-tuple of (exit status, output
+        list) if the process terminates without timing out or being killed by a
+        signal.  Otherwise, the Deferred errbacks with either L{error.TimeoutError}
+        if any 10 minute period passes with no events or L{ProcessDied} if it is
+        killed by a signal.
+
+        On success, the output list is of two-tuples of (file descriptor, bytes).
+        """
+        d = defer.Deferred()
+        proto = cls(d, filepath.FilePath(path))
+        if spawnProcess is None:
+            spawnProcess = reactor.spawnProcess
+        spawnProcess(
+            proto,
+            executable,
+            [executable] + args,
+            path=path,
+            env=env,
+            childFDs={0: 'w', 1: 'r', 2: 'r',
+                      cls.BACKCHANNEL_OUT: 'r',
+                      cls.BACKCHANNEL_IN: 'w'})
+        return d
+    spawn = classmethod(spawn)
+
+
+
+class Change(object):
     """
-    Run an executable with some arguments in the given working directory with
-    the given environment variables.
-
-    Returns a Deferred which fires with a two-tuple of (exit status, output
-    list) if the process terminates without timing out or being killed by a
-    signal.  Otherwise, the Deferred errbacks with either L{error.TimeoutError}
-    if any 10 minute period passes with no events or L{ProcessDied} if it is
-    killed by a signal.
-
-    On success, the output list is of two-tuples of (file descriptor, bytes).
+    Stores two ResourceSnapshots taken at two different times.
     """
-    d = defer.Deferred()
-    proto = StupidProcess(d)
-    if spawnProcess is None:
-        spawnProcess = reactor.spawnProcess
-    spawnProcess(proto, executable, [executable] + args, path=path, env=env)
-    return d
+    def start(self, path, disk, partition):
+        # Do these three things as explicit, separate statments to make sure
+        # gathering disk stats isn't accidentally included in the duration.
+        startSize = getSize(path)
+        beforeDiskStats = captureStats()
+        startTime = time.time()
+        self.before = ResourceSnapshot(
+            time=startTime,
+            disk=beforeDiskStats.get(disk, None),
+            partition=beforeDiskStats.get(partition, None),
+            size=startSize)
+
+
+    def stop(self, path, disk, partition):
+        # Do these three things as explicit, separate statments to make sure
+        # gathering disk stats isn't accidentally included in the duration.
+        endTime = time.time()
+        afterDiskStats = captureStats()
+        endSize = getSize(path)
+        self.after = ResourceSnapshot(
+            time=endTime,
+            disk=afterDiskStats.get(disk, None),
+            partition=afterDiskStats.get(partition, None),
+            size=endSize)
 
 
 
-def makePythonScriptRunner(*a, **kw):
-    def doer():
-        return spawn(*a, **kw)
-    return doer
+class BenchmarkProcess(BasicProcess):
+
+    START = '\0'
+    STOP = '\1'
+
+
+    def __init__(self, *a, **kw):
+        BasicProcess.__init__(self, *a, **kw)
+
+        # Figure out where the process is running.
+        self.partition = discoverCurrentWorkingDevice().split('/')[-1]
+        self.disk = self.partition.rstrip('0123456789')
+
+        # Keep track of stats for the entire process run.
+        self.overallChange = Change()
+        self.overallChange.start(self.path, self.disk, self.partition)
+
+        # Just keep track of stats between START and STOP events.
+        self.benchmarkChange = Change()
+
+
+    def connectionMade(self):
+        return BasicProcess.connectionMade(self)
+
+
+    def startTiming(self):
+        self.benchmarkChange.start(self.path, self.disk, self.partition)
+        self.transport.writeToChild(self.BACKCHANNEL_IN, self.START)
+
+
+    def stopTiming(self):
+        self.benchmarkChange.stop(self.path, self.disk, self.partition)
+        self.transport.writeToChild(self.BACKCHANNEL_IN, self.STOP)
+
+
+    def childDataReceived(self, childFD, data):
+        if childFD == self.BACKCHANNEL_OUT:
+            self.resetTimeout()
+            for byte in data:
+                if byte == self.START:
+                    self.startTiming()
+                elif byte == self.STOP:
+                    self.stopTiming()
+                else:
+                    self.transport.signalProcess('QUIT')
+        else:
+            return BasicProcess.childDataReceived(self, childFD, data)
+
+
+    def processEnded(self, reason):
+        self.overallChange.stop(self.path, self.disk, self.partition)
+        return BasicProcess.processEnded(self, reason)
+
 
 
 STATS_VERSION = 0
-
 class Results(juice.Command):
     commandName = 'Result'
     arguments = [
@@ -201,7 +292,7 @@ class Results(juice.Command):
         # means they're bogus.
         ('error', juice.Boolean()),
 
-        # If a particular timeout (See StupidProcess.connectionMade) elapsed
+        # If a particular timeout (See BasicProcess.connectionMade) elapsed
         # with no events whatsoever from the benchmark process.
         ('timeout', juice.Boolean()),
 
@@ -348,7 +439,17 @@ def getSize(p):
     """
     result = 0
     for ch in p.walk():
-        result += ch.getsize()
+        try:
+            result += ch.getsize()
+        except OSError, e:
+            if e.errno == errno.ENOENT:
+                # XXX FilePath is broken
+                if os.path.islink(ch.path):
+                    result += len(os.readlink(ch.path))
+                else:
+                    raise
+            else:
+                raise
     return result
 
 
@@ -357,60 +458,99 @@ def getSectorSize(p):
     return os.statvfs(p.path).f_bsize
 
 
-def bench(name, workingPath, function):
-    partition = discoverCurrentWorkingDevice().split('/')[-1]
-    disk = partition.rstrip('0123456789')
-    beforeDiskStats = captureStats()
-    before = ResourceSnapshot(
-        time=time.time(),
-        disk=beforeDiskStats.get(disk, None),
-        partition=beforeDiskStats.get(partition, None),
-        size=0)
-
+def _bench(name, workingPath, function):
     d = function()
     def later(result):
-        try:
-            try:
-                err = timeout = False
-                if isinstance(result, failure.Failure):
-                    err = True
-                    log.msg("Failing because Failure!")
-                    if result.check(error.TimeoutError):
-                        timeout = True
-                    elif result.check(ProcessDied):
-                        pprint.pprint(result.value.output)
-                    else:
-                        log.err(result)
-                else:
-                    if result[0] or [bytes for (fd, bytes) in result[1] if fd == 2 and bytes is not None]:
-                        err = True
-                        log.msg("Failing because stderr or bad status")
-                        pprint.pprint(result)
-                # Do these two things as explicitly separate statments to make
-                # sure gathering disk stats isn't accidentally included in the
-                # duration.
-                endTime = time.time()
-                afterDiskStats = captureStats()
-                endSize = getSize(workingPath)
-                after = ResourceSnapshot(
-                    time=endTime,
-                    disk=afterDiskStats.get(disk, None),
-                    partition=afterDiskStats.get(partition, None),
-                    size=endSize)
-                reportResults(formatResults(name,
-                                            getSectorSize(workingPath),
-                                            before,
-                                            after,
-                                            err,
-                                            timeout))
-            except:
-                log.err()
-        finally:
-            reactor.stop()
-    d.addBoth(later)
+        err = timeout = False
+        if isinstance(result, failure.Failure):
+            err = True
+            log.msg("Failing because Failure!")
+            if result.check(error.TimeoutError):
+                timeout = True
+            elif result.check(ProcessDied):
+                pprint.pprint(result.value.output)
+                print result.value.exitCode, result.value.signal
+            else:
+                log.err(result)
+        else:
+            proto, status, output = result
+            stderr = [bytes for (fd, bytes) in output if fd == 2]
+            if status or stderr != [None]:
+                err = True
+                log.msg("Failing because stderr or bad status")
+                pprint.pprint(result)
+
+            for n, change in [(name + '-overall', proto.overallChange),
+                              (name + '-benchmark', proto.benchmarkChange)]:
+                reportResults(formatResults(
+                    n,
+                    getSectorSize(workingPath),
+                    change.before,
+                    change.after,
+                    err,
+                    timeout))
+
+    return d.addBoth(later)
+
+
+
+def bench(name, path, func):
     log.startLogging(sys.stdout)
     log.msg("Running " + name)
+
+    d = _bench(name, path, func)
+    d.addErrback(log.err)
+    d.addCallback(lambda ign: reactor.stop())
+
     reactor.run()
+
+
+def makeBenchmarkRunner(path, args):
+    """
+    Make a function that will run two Python processes serially: first one
+    which calls the setup function from the given file, then one which calls
+    the execute function from the given file.
+    """
+    def runner():
+        return BenchmarkProcess.spawn(
+            executable=sys.executable,
+            args=['-Wignore'] + args,
+            path=path.path,
+            env=os.environ)
+    return runner
+
+
+
+def start():
+    """
+    Start recording stats.  Call this from a benchmark script when your setup
+    is done.  Call this at most once.
+
+    @raise RuntimeError: Raised if the parent process responds with anything
+    other than an acknowledgement of this message.
+    """
+    os.write(BenchmarkProcess.BACKCHANNEL_OUT, BenchmarkProcess.START)
+    response = util.untilConcludes(os.read, BenchmarkProcess.BACKCHANNEL_IN, 1)
+    if response != BenchmarkProcess.START:
+        raise RuntimeError(
+            "Parent process responded with %r instead of START " % (response,))
+
+
+
+def stop():
+    """
+    Stop recording stats.  Call this from a benchmark script when the code you
+    want benchmarked has finished.  Call this exactly the same number of times
+    you call L{start} and only after calling it.
+
+    @raise RuntimeError: Raised if the parent process responds with anything
+    other than an acknowledgement of this message.
+    """
+    os.write(BenchmarkProcess.BACKCHANNEL_OUT, BenchmarkProcess.STOP)
+    response = util.untilConcludes(os.read, BenchmarkProcess.BACKCHANNEL_IN, 1)
+    if response != BenchmarkProcess.STOP:
+        raise RuntimeError(
+            "Parent process responded with %r instead of STOP" % (response,))
 
 
 
@@ -423,12 +563,8 @@ def main():
     name = sys.argv[1]
     path = filepath.FilePath('.stat').temporarySibling()
     path.makedirs()
+    func = makeBenchmarkRunner(path, sys.argv[1:])
     try:
-        func = makePythonScriptRunner(
-            executable=sys.executable,
-            args=['-Wignore'] + sys.argv[1:],
-            path=path.path,
-            env=os.environ)
         bench(name, path, func)
     finally:
         path.remove()

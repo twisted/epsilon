@@ -236,6 +236,21 @@ class ReporterTestCase(unittest.TestCase):
             os.path.getsize(path) + os.path.getsize(os.path.join(path, 'foo')))
 
 
+    def testGetSizeBrokenSymlink(self):
+        """
+        Test that a broken symlink inside a directory passed to getSize doesn't
+        cause it to freak out.
+        """
+        path = self.mktemp()
+        os.makedirs(path)
+        presize = benchmark.getSize(filepath.FilePath(path))
+        print presize
+        os.symlink('abcdefg', os.path.join(path, 'foo'))
+        self.assertEquals(
+            benchmark.getSize(filepath.FilePath(path)),
+            presize + len('abcdefg'))
+
+
 
 class MockSpawnProcess(object):
     """
@@ -245,12 +260,13 @@ class MockSpawnProcess(object):
 
     killed = False
 
-    def __init__(self, proto, executable, args, path, env):
+    def __init__(self, proto, executable, args, path, env, childFDs):
         self.proto = proto
         self.executable = executable
         self.args = args
         self.path = path
         self.env = env
+        self.childFDs = childFDs
         self.signals = []
 
 
@@ -262,13 +278,18 @@ class MockSpawnProcess(object):
 
 
 
-class SpawnTestCase(unittest.TestCase):
+class SpawnMixin:
+
     def setUp(self):
         mock = []
         def spawnProcess(*a, **kw):
             mock.append(MockSpawnProcess(*a, **kw))
             return mock[0]
-        self.spawnDeferred = benchmark.spawn('executable', ['args'], 'path', {'env': 'stuff'}, spawnProcess)
+        self.workingDirectory = self.mktemp()
+        os.makedirs(self.workingDirectory)
+        self.spawnDeferred = self.processProtocol.spawn(
+            'executable', ['args'], self.workingDirectory, {'env': 'stuff'},
+            spawnProcess)
         self.mock = mock[0]
 
         self.sched = []
@@ -292,10 +313,14 @@ class SpawnTestCase(unittest.TestCase):
         self.mock.proto.makeConnection(self.mock)
 
 
+
+class BasicProcessTestCase(SpawnMixin, unittest.TestCase):
+    processProtocol = benchmark.BasicProcess
+
     def testCorrectArgs(self):
         self.assertEquals(self.mock.executable, 'executable')
         self.assertEquals(self.mock.args, ['executable', 'args'])
-        self.assertEquals(self.mock.path, 'path')
+        self.assertEquals(self.mock.path, self.workingDirectory)
         self.assertEquals(self.mock.env, {'env': 'stuff'})
 
 
@@ -304,10 +329,11 @@ class SpawnTestCase(unittest.TestCase):
         self.mock.proto.childDataReceived(2, 'stderr bytes')
         self.mock.proto.childDataReceived(1, 'more stdout bytes')
 
-        def cbProcessFinished(result):
-            self.assertEquals(result[0], 0)
+        def cbProcessFinished((proto, status, output)):
+            self.assertIdentical(proto, self.mock.proto)
+            self.assertEquals(status, 0)
             self.assertEquals(
-                result[1],
+                output,
                 [(1, 'stdout bytes'),
                  (2, 'stderr bytes'),
                  (1, 'more stdout bytes')])
@@ -364,3 +390,38 @@ class SpawnTestCase(unittest.TestCase):
         d = self.assertFailure(self.spawnDeferred, benchmark.ProcessDied)
         d.addCallback(cbKilled)
         return d
+
+
+
+class SnapshotTestCase(unittest.TestCase):
+    def testStart(self):
+        c = benchmark.Change()
+        c.start(filepath.FilePath('.'), 'hda', 'hda1')
+        self.failUnless(isinstance(c.before, benchmark.ResourceSnapshot))
+
+
+    def testStop(self):
+        c = benchmark.Change()
+        c.stop(filepath.FilePath('.'), 'hda', 'hda1')
+        self.failUnless(isinstance(c.after, benchmark.ResourceSnapshot))
+
+
+
+class BenchmarkProcessTestCase(SpawnMixin, unittest.TestCase):
+
+    processProtocol = benchmark.BenchmarkProcess
+
+    def testProcessStartTimingCommand(self):
+        started = []
+        p = self.mock.proto
+        p.startTiming = lambda: started.append(None)
+        self.mock.proto.childDataReceived(p.BACKCHANNEL_OUT, p.START)
+        self.assertEquals(started, [None])
+
+
+    def testProcessStopTimingCommand(self):
+        stopped = []
+        p = self.mock.proto
+        p.stopTiming = lambda: stopped.append(None)
+        self.mock.proto.childDataReceived(p.BACKCHANNEL_OUT, p.STOP)
+        self.assertEquals(stopped, [None])
