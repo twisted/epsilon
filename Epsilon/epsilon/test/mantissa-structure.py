@@ -14,7 +14,7 @@ os.mkdir(opj(topDir, codeDir))
 
 file(opj(topDir, codeDir, '__init__.py'), 'w').write("""
 # Don't put code here.
-from epsilon.versions import Version
+from twisted.python.versions import Version
 version = Version(%r, 0, 0, 1)
 
 """ %(codeDir,))
