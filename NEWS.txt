@@ -1,6 +1,19 @@
-x.x.x (YYYY-MM-DD):
+0.5.0 (2006-06-12):
   - Replaced '%y' with '%Y' in Time.asHumanly() output - the year is now
     four digits, rather than two.
+  - Added new 'epsilon.structlike' functionality for simple record.
+  - All uses of defer.wait and deferredResult were removed from the tests.
+  - Added epsilon.juice, an asynchronous messaging protocol slated for
+    inclusion in Twisted.  Improved a few features, such as the repr() of
+    JuiceBox instances.  This was moved from Vertex.
+  - Added epsilon.sslverify, a set of utilities for dealing with PyOpenSSL
+    using simple high-level objects, performing operations such as signing and
+    verifying certificates.  This was also moved from Vertex, and slated for
+    inclusion in Twisted.
+  - Added epsilon.spewer, a prettier version of the spewer in
+    twisted.python.util.
+  - Added "benchmark" tool for measuring and reporting run-times of python
+    programs.
 
 0.4.0 (2005-12-20):
   - Disabled crazy sys.modules hackery in test_setuphelper

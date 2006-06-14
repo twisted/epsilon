@@ -1,2 +1,2 @@
 Python 2.4
-Twisted 2.1.1
+Twisted 2.4.0
