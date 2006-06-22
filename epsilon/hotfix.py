@@ -39,7 +39,18 @@ def require(packageName, fixName):
             from epsilon.hotfixes import deferredgenerator_tfailure
             deferredgenerator_tfailure.install()
         else:
-            assert reuslt == [None]
+            assert result == [None]
+    elif (packageName, fixName) == ("twisted", "proto_helpers_stringtransport"):
+        from twisted.test.proto_helpers import StringTransport
+        st = StringTransport()
+        try:
+            st.write(u'foo')
+        except TypeError, e:
+            pass
+        else:
+            from epsilon.hotfixes import proto_helpers_stringtransport
+            proto_helpers_stringtransport.install()
+        
     else:
         raise NoSuchHotfix(packageName, fixName)
 
