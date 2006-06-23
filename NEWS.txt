@@ -1,3 +1,6 @@
+0.5.1 (2006-06-22):
+  - Added hotfix for twisted.test.proto_helpers.StringTransport.
+
 0.5.0 (2006-06-12):
   - Replaced '%y' with '%Y' in Time.asHumanly() output - the year is now
     four digits, rather than two.
