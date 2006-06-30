@@ -348,7 +348,7 @@ class BasicProcessTestCase(SpawnMixin, unittest.TestCase):
         and that if it expires, the spawn call's Deferred fails.
         """
         self.assertEquals(len(self.sched), 1)
-        self.assertEquals(self.sched[0].getTime(), 600.0)
+        self.assertEquals(self.sched[0].getTime(), 900.0)
         self.sched[0].func(*self.sched[0].args, **self.sched[0].kw)
 
         def cbTimedOut(ign):
@@ -366,12 +366,12 @@ class BasicProcessTestCase(SpawnMixin, unittest.TestCase):
         self.currentTime = 1
         self.mock.proto.childDataReceived(1, 'bytes')
         self.assertEquals(len(self.sched), 1)
-        self.assertEquals(self.sched[0].getTime(), 601.0)
+        self.assertEquals(self.sched[0].getTime(), 901.0)
 
         self.currentTime = 2
         self.mock.proto.childConnectionLost(1)
         self.assertEquals(len(self.sched), 1)
-        self.assertEquals(self.sched[0].getTime(), 602.0)
+        self.assertEquals(self.sched[0].getTime(), 902.0)
 
 
     def testProcessKilled(self):

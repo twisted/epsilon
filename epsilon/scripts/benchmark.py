@@ -123,7 +123,7 @@ class BasicProcess(protocol.ProcessProtocol, policies.TimeoutMixin):
 
 
     def connectionMade(self):
-        self.setTimeout(600.0)
+        self.setTimeout(900.0)
 
 
     def timeoutConnection(self):
@@ -464,10 +464,11 @@ def _bench(name, workingPath, function):
         err = timeout = False
         if isinstance(result, failure.Failure):
             err = True
-            log.msg("Failing because Failure!")
             if result.check(error.TimeoutError):
+                log.msg("Failing because timeout!")
                 timeout = True
             elif result.check(ProcessDied):
+                log.msg("Failing because Failure!")
                 pprint.pprint(result.value.output)
                 print result.value.exitCode, result.value.signal
             else:
