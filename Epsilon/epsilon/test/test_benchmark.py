@@ -302,7 +302,7 @@ class SpawnMixin:
             self.sched.remove(c)
 
         def resetter(c):
-            self.sched.sort(key=operator.attrgetter('time'))
+            self.sched.sort(key=lambda d: d.getTime())
 
         def callLater(n, f, *a, **kw):
             c = base.DelayedCall(self.currentTime + n, f, a, kw, canceller, resetter, seconds)
