@@ -7,6 +7,21 @@ from twisted.trial import unittest
 
 from epsilon import extime
 
+# This is the implementation of 'mkgmtime' used to derive the values below.  It
+# is perhaps instructive to read, but it remains commented out to avoid the
+# temptation to actually call it.  If have a GMT time-tuple, just use
+# Time.fromStructTime(gmtt).asPOSIXTimestamp() to convert it; this was only
+# written as an alternative implementation to test that code path.
+
+# def mkgmtime(gmtt):
+#     'convert GMT time-tuple to local time'
+#     if time.daylight and gmtt[-1]:
+#         zone = time.altzone
+#     else:
+#         zone = time.timezone
+#     return time.mktime(gmtt) - zone
+
+
 class TestTime(unittest.TestCase):
     class MST(datetime.tzinfo):
         def tzname(self, dt):
@@ -197,7 +212,9 @@ class TestTime(unittest.TestCase):
         self._checkReference( extime.Time.fromDatetime(datetime.datetime(2004, 12, 6, 15, 15, 16, tzinfo=self.CET())) )
 
     def testFromPOSIXTimestamp(self):
-        self._checkReference( extime.Time.fromPOSIXTimestamp(extime.mkgmtime((2004, 12, 6, 14, 15, 16, 0, 0, 0))) )
+        # if there were an 'mkgmtime', it would do this:
+        # mkgmtime((2004, 12, 6, 14, 15, 16, 0, 0, 0))) = 1102342516.0
+        self._checkReference( extime.Time.fromPOSIXTimestamp(1102342516.0))
 
     def testFromRFC2822(self):
         self._checkReference( extime.Time.fromRFC2822('Mon, 6 Dec 2004 14:15:16 -0000') )
@@ -208,6 +225,45 @@ class TestTime(unittest.TestCase):
         self._checkReference( extime.Time.fromRFC2822('Mon,6 Dec 2004 9:15:16 EST') )
         self._checkReference( extime.Time.fromRFC2822('Monday,6 December 2004 9:15:16 EST') )
         self.assertRaises( ValueError, extime.Time.fromRFC2822, 'some invalid date' )
+
+    def test_twentyThirtyEightBug_RFC2822(self):
+        """
+        Verify that we can parse RFC2822 timestamps after the One Terrible
+        Moment in 2038.
+
+        In other words, make sure that we don't round trip through a platform
+        time_t, because those will overflow on 32-bit platforms in 2038.
+        """
+        self.assertEquals(
+            extime.Time.fromRFC2822(
+                    'Fri, 19 Jan 2038 03:14:08 -0000'
+                    ).asPOSIXTimestamp(),
+            (2**31))
+        self.assertEquals(
+            extime.Time.fromRFC2822(
+                'Fri, 13 Dec 1901 20:45:52 -0000'
+                ).asPOSIXTimestamp(),
+            -(2**31))
+
+    def test_twentyThirtyEightBug_POSIXTimestamp(self):
+        """
+        Verify that we can load POSIX timestamps after the One Terrible Moment
+        in 2038.
+
+        In other words, make sure that we don't round trip through a platform
+        time_t, because those will overflow on 32-bit platforms in 2038.
+        """
+        self.assertEquals(
+            extime.Time.fromPOSIXTimestamp(
+                2**31
+                ).asPOSIXTimestamp(),
+            (2**31))
+        self.assertEquals(
+            extime.Time.fromPOSIXTimestamp(
+                -(2**31)-1
+                ).asPOSIXTimestamp(),
+            -(2**31)-1)
+
 
     def testObsoleteRFC2822(self):
         self._checkReference( extime.Time.fromRFC2822('Monday,6 December (i hate this month) 2004 9:15:16 R') )

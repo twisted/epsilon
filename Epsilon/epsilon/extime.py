@@ -7,17 +7,57 @@ See the class 'Time' for details.
 
 import datetime
 import re
-import time
 
-from email.Utils import mktime_tz, parsedate_tz
+from email.Utils import parsedate_tz
 
-def mkgmtime(gmtt):
-    'convert GMT time-tuple to local time'
-    if time.daylight and gmtt[-1]:
-        zone = time.altzone
+_EPOCH = datetime.datetime.utcfromtimestamp(0)
+
+def _timedeltaToSignHrMin(offset):
+    """
+    Return a (sign, hour, minute) triple for the offset described by timedelta.
+
+    sign is a string, either "+" or "-". In the case of 0 offset, sign is "+".
+    """
+    minutes = round((offset.days * 3600000000 * 24
+                     + offset.seconds * 1000000
+                     + offset.microseconds)
+                    / 60000000.0)
+    if minutes < 0:
+        sign = '-'
+        minutes = -minutes
     else:
-        zone = time.timezone
-    return time.mktime(gmtt) - zone
+        sign = '+'
+    return (sign, minutes // 60, minutes % 60)
+
+def _timedeltaToSeconds(offset):
+    """
+    Convert a datetime.timedelta instance to simply a number of seconds.
+
+    For example, you can specify purely second intervals with timedelta's
+    constructor:
+
+        >>> td = datetime.timedelta(seconds=99999999)
+
+    but then you can't get them out again:
+
+        >>> td.seconds
+        35199
+
+    This allows you to:
+
+        >>> import epsilon.extime
+        >>> epsilon.extime._timedeltaToSeconds(td)
+        99999999.0
+
+    @param offset: a L{datetime.timedelta} representing an interval that we
+    wish to know the total number of seconds for.
+
+    @return: a number of seconds
+    @rtype: float
+    """
+    return ((offset.days * 60*60*24) +
+            (offset.seconds) +
+            (offset.microseconds * 1e-6))
 
 class FixedOffset(datetime.tzinfo):
     _zeroOffset = datetime.timedelta()
@@ -29,13 +69,14 @@ class FixedOffset(datetime.tzinfo):
         return self.offset
 
     def tzname(self, dt):
-        return Time._timedeltaToHrMin(self.offset)
+        return _timedeltaToSignHrMin(self.offset)
 
     def dst(self, tz):
         return self._zeroOffset
 
     def __repr__(self):
-        return '<%s.%s object at 0x%x offset %r>' % (self.__module__, type(self).__name__, id(self), self.offset)
+        return '<%s.%s object at 0x%x offset %r>' % (
+            self.__module__, type(self).__name__, id(self), self.offset)
 
 
 
@@ -102,7 +143,9 @@ class Time(object):
     # great, if one existed, and anyway it complicates pickling.
 
     rfc2822Weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    rfc2822Months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    rfc2822Months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+                     'Sep', 'Oct', 'Nov', 'Dec']
 
     resolution = datetime.timedelta.resolution
 
@@ -118,25 +161,11 @@ class Time(object):
         """
         self._time = datetime.datetime.utcnow()
 
-    def _timedeltaToHrMin(offset):
-        """Return a (sign, hour, minute) triple coresponding to the offset described by timedelta.
-
-        sign is "+" or "-". In the case of 0 offset, sign is "+".
-        """
-        minutes = round((offset.days * 3600000000 * 24 + offset.seconds * 1000000 + offset.microseconds) / 60000000.0)
-        if minutes < 0:
-            sign = '-'
-            minutes = -minutes
-        else:
-            sign = '+'
-        return (sign, minutes // 60, minutes % 60)
-
-    _timedeltaToHrMin = staticmethod(_timedeltaToHrMin)
-
 
     def _fromWeekday(klass, match, tzinfo, now):
         weekday = klass.weekdays.index(match.group('weekday').lower())
-        dtnow = now.asDatetime().replace(hour=0, minute=0, second=0, microsecond=0)
+        dtnow = now.asDatetime().replace(
+            hour=0, minute=0, second=0, microsecond=0)
         daysInFuture = (weekday - dtnow.weekday()) % len(klass.weekdays)
         if daysInFuture == 0:
             daysInFuture = 7
@@ -147,7 +176,8 @@ class Time(object):
 
 
     def _fromTodayOrTomorrow(klass, match, tzinfo, now):
-        dtnow = now.asDatetime().replace(hour=0, minute=0, second=0, microsecond=0)
+        dtnow = now.asDatetime().replace(
+            hour=0, minute=0, second=0, microsecond=0)
         when = match.group(0).lower()
         if when == 'tomorrow':
             dtnow += datetime.timedelta(days=1)
@@ -191,7 +221,8 @@ class Time(object):
         else:
             assert when == 'midnight'
             hour = 0
-        dtnow = now.asDatetime(tzinfo).replace(minute=0, second=0, microsecond=0)
+        dtnow = now.asDatetime(tzinfo).replace(
+            minute=0, second=0, microsecond=0)
         dtthen = dtnow.replace(hour=hour)
         if dtthen < dtnow:
             dtthen += datetime.timedelta(days=1)
@@ -204,7 +235,8 @@ class Time(object):
         # coerce our 'now' argument to an instant
         return now + datetime.timedelta(0)
 
-    weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday',
+                'saturday', 'sunday']
 
     humanlyPatterns = [
         (re.compile(r"""
@@ -357,8 +389,8 @@ class Time(object):
         def coerceGroups():
             groups['month'] = groups['month1'] or groups['month2']
             groups['week'] = groups['week1'] or groups['week2']
-
-            defaultTo0 = ['hour', 'minute', 'second'] # don't include fractionalsec, because it's not an integer.
+            # don't include fractional seconds, because it's not an integer.
+            defaultTo0 = ['hour', 'minute', 'second']
             defaultTo1 = ['month', 'day', 'week', 'weekday', 'dayofyear']
             if groups['fractionalsec'] is None:
                 groups['fractionalsec'] = '0'
@@ -373,21 +405,38 @@ class Time(object):
                 groups[key] = int(groups[key])
 
             for group, min, max in [
-            ('week', 1, 53),            # some years have only 52
-            ('weekday', 1, 7),
-            ('month', 1, 12),
-            ('day', 1, 31),
-            ('hour', 0, 24),
-            ('minute', 0, 59),
-            ('second', 0, 61),          # it's possible to have *two* leapseconds. I'll kill myself when it happens, though.
-            ('dayofyear', 1, 366)]:     # don't forget leap years
+                # some years have only 52 weeks
+                ('week', 1, 53),
+                ('weekday', 1, 7),
+                ('month', 1, 12),
+                ('day', 1, 31),
+                ('hour', 0, 24),
+                ('minute', 0, 59),
+
+                # Sometime in the 22nd century AD, two leap seconds will be
+                # required every year.  In the 25th century AD, four every
+                # year.  We'll ignore that for now though because it would be
+                # tricky to get right and we certainly don't need it for our
+                # target applications.  In other words, post-singularity
+                # Martian users, please do not rely on this code for
+                # compatibility with Greater Galactic Protectorate of Earth
+                # date/time formatting!  Apologies, but no library I know of in
+                # Python is sufficient for processing their dates and times
+                # without ADA bindings to get the radiation-safety zone counter
+                # correct. -glyph
+
+                ('second', 0, 61),
+                # don't forget leap years
+                ('dayofyear', 1, 366)]:
                 if not min <= groups[group] <= max:
                     raise ValueError, '%s must be in %i..%i' % (group, min, max)
 
         def determineResolution():
             if match.group('fractionalsec') is not None:
                 return max(datetime.timedelta.resolution,
-                    datetime.timedelta( microseconds = 1 * 10 ** -len(match.group('fractionalsec')) * 1000000 ) )
+                    datetime.timedelta(
+                        microseconds=1 * 10 ** -len(
+                            match.group('fractionalsec')) * 1000000))
 
             for testGroup, resolution in [
             ('second', datetime.timedelta(seconds=1)),
@@ -417,7 +466,8 @@ class Time(object):
             if match.group('week1') is not None \
             or match.group('week2') is not None:
                 if not 0 < groups['week'] <= 53:
-                    raise ValueError, 'week must be in 1..53 (was %i)' % (groups['week'],)
+                    raise ValueError(
+                        'week must be in 1..53 (was %i)' % (groups['week'],))
                 dtime = datetime.datetime(
                     groups['year'],
                     1,
@@ -429,12 +479,15 @@ class Time(object):
                     tzinfo=tzinfo
                 )
                 dtime -= datetime.timedelta(days = dtime.weekday())
-                dtime += datetime.timedelta(days = (groups['week']-1) * 7 + groups['weekday'] - 1)
-                if dtime.isocalendar() != (groups['year'], groups['week'], groups['weekday']):
+                dtime += datetime.timedelta(
+                    days = (groups['week']-1) * 7 + groups['weekday'] - 1)
+                if dtime.isocalendar() != (
+                    groups['year'], groups['week'], groups['weekday']):
                     # actually the problem could be an error in my logic, but
                     # nothing should cause this but requesting week 53 of a
                     # year with 52 weeks.
-                    raise ValueError, 'year %04i has no week %02i' % (groups['year'], groups['week'])
+                    raise ValueError('year %04i has no week %02i' %
+                                     (groups['year'], groups['week']))
                 return dtime
 
             if match.group('dayofyear') is not None:
@@ -450,7 +503,9 @@ class Time(object):
                 )
                 dtime += datetime.timedelta(days=groups['dayofyear']-1)
                 if dtime.year != groups['year']:
-                    raise ValueError, 'year %04i has no day of year %03i' % (groups['year'], groups['dayofyear'])
+                    raise ValueError(
+                        'year %04i has no day of year %03i' %
+                        (groups['year'], groups['dayofyear']))
                 return dtime
 
             else:
@@ -468,7 +523,9 @@ class Time(object):
 
         match = klass.iso8601pattern.match(iso8601string)
         if match is None:
-            raise ValueError, '%r could not be parsed as an ISO 8601 date and time' % (iso8601string,)
+            raise ValueError(
+                '%r could not be parsed as an ISO 8601 date and time' %
+                (iso8601string,))
 
         groups = match.groupdict()
         coerceGroups()
@@ -524,26 +581,41 @@ class Time(object):
         seconds don't exist, so one UTC day is exactly 86400 seconds, even if
         it wasn't.
 
-        `secs` can be an integer or a float.
+        @param secs: a number of seconds, represented as an integer, long or
+        float.
         """
-        self = klass.fromDatetime(datetime.datetime.utcfromtimestamp(secs))
+        self = klass.fromDatetime(_EPOCH + datetime.timedelta(seconds=secs))
         self.resolution = datetime.timedelta()
         return self
 
     fromPOSIXTimestamp = classmethod(fromPOSIXTimestamp)
 
     def fromRFC2822(klass, rfc822string):
-        """Return a new Time instance from a string formated as described in RFC 2822.
-
-        RFC 2822 specifies the format of email messages.
-
-        Some of the obsoleted elements of the specification are not parsed
-        correctly, and will raise ValueError.
         """
-        date = parsedate_tz(rfc822string)
-        if date is None:
+        Return a new Time instance from a string formated as described in RFC 2822.
+
+        @type rfc822string: str
+
+        @raise ValueError: if the timestamp is not formatted properly (or if
+        certain obsoleted elements of the specification are used).
+
+        @return: a new L{Time}
+        """
+
+        # parsedate_tz is going to give us a "struct_time plus", a 10-tuple
+        # containing the 9 values a struct_time would, i.e.: (tm_year, tm_mon,
+        # tm_day, tm_hour, tm_min, tm_sec, tm_wday, tm_yday, tm_isdst), plus a
+        # bonus "offset", which is an offset (in _seconds_, of all things).
+
+        structTimePlus = parsedate_tz(rfc822string)
+        if structTimePlus is None:
             raise ValueError, 'could not parse RFC 2822 date %r' % (rfc822string,)
-        self = klass.fromStructTime(time.gmtime(mktime_tz(date)))
+        offsetInSeconds = structTimePlus[-1]
+        self = klass.fromStructTime(
+            structTimePlus,
+            FixedOffset(
+                hours=0,
+                minutes=offsetInSeconds // 60))
         self.resolution = datetime.timedelta(seconds=1)
         return self
 
@@ -559,11 +631,8 @@ class Time(object):
         This timestamp is the count of the number of seconds since Midnight,
         Jan 1 1970 UTC, ignoring leap seconds.
         """
-        return 60*60*24 * (self._time.toordinal()-719163) \
-             + self._time.hour * 60*60 \
-             + self._time.minute * 60 \
-             + self._time.second \
-             + self._time.microsecond * 0.000001
+        mytimedelta = self._time - _EPOCH
+        return _timedeltaToSeconds(mytimedelta)
 
     def asDatetime(self, tzinfo=None):
         """Return this time as an aware datetime.datetime instance.
@@ -607,7 +676,7 @@ class Time(object):
         if tzinfo is None:
             rfcoffset = '-0000'
         else:
-            rfcoffset = '%s%02i%02i' % self._timedeltaToHrMin(dtime.utcoffset())
+            rfcoffset = '%s%02i%02i' % _timedeltaToSignHrMin(dtime.utcoffset())
 
         rfcstring = ''
         if includeDayOfWeek:
@@ -624,7 +693,8 @@ class Time(object):
 
         return rfcstring
 
-    def asISO8601TimeAndDate(self, includeDelimiters=True, tzinfo=None, includeTimezone=True):
+    def asISO8601TimeAndDate(self, includeDelimiters=True, tzinfo=None,
+                             includeTimezone=True):
         """Return this time formatted as specified by ISO 8861.
 
         ISO 8601 allows optional dashes to delimit dates and colons to delimit
@@ -652,7 +722,7 @@ class Time(object):
             if tzinfo is None:
                 timezone = '+00%s00' % (timeSep,)
             else:
-                sign, hour, min = self._timedeltaToHrMin(dtime.utcoffset())
+                sign, hour, min = _timedeltaToSignHrMin(dtime.utcoffset())
                 timezone = '%s%02i%s%02i' % (sign, hour, timeSep, min)
         else:
             timezone = ''
@@ -765,7 +835,8 @@ class Time(object):
 
         return (
             min(self.fromDatetime(time), self.fromDatetime(self._time)),
-            max(self.fromDatetime(time + self.resolution), self.fromDatetime(self._time + self.resolution))
+            max(self.fromDatetime(time + self.resolution),
+                self.fromDatetime(self._time + self.resolution))
         )
 
     def oneDay(self):
@@ -775,7 +846,8 @@ class Time(object):
         the first instant of self in the specified timezone, and have a
         resolution of datetime.timedelta(days=1).
         """
-        day = self.__class__.fromDatetime(self.asDatetime().replace(hour=0, minute=0, second=0, microsecond=0))
+        day = self.__class__.fromDatetime(self.asDatetime().replace(
+                hour=0, minute=0, second=0, microsecond=0))
         day.resolution = datetime.timedelta(days=1)
         return day
 
@@ -820,7 +892,9 @@ class Time(object):
     def __contains__(self, other):
         """Test if another Time instance is entirely within the period addressed by this one."""
         if not isinstance(other, Time):
-            raise TypeError, '%r is not a Time instance; can not test for containment' % (other,)
+            raise TypeError(
+                '%r is not a Time instance; can not test for containment'
+                % (other,))
         if other._time < self._time:
             return False
         if self._time + self.resolution < other._time + other.resolution:
