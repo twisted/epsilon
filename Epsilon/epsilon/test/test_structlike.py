@@ -61,3 +61,12 @@ class StructLike(unittest.TestCase):
     def testCreateWithNoValuesAndNoDefaults(self):
         R = record('x')
         self.assertRaises(TypeError, R)
+
+    def testUnknownArgs(self):
+        """
+        Test that passing in unknown keyword and / or positional arguments to a
+        record's initializer causes TypeError to be raised.
+        """
+        R = record('x')
+        self.assertRaises(TypeError, R, x=5, y=6)
+        self.assertRaises(TypeError, R, 5, 6)
