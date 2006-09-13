@@ -8,6 +8,9 @@ class StructBehavior(object):
         super(StructBehavior, self).__init__()
 
         # Turn all the args into kwargs
+        if len(args) > len(self.__names__):
+            raise TypeError("Got %d positional arguments but expected no more than %d" % (len(args), len(self.__names__)))
+
         for n, v in zip(self.__names__, args):
             if n in kw:
                 raise TypeError("Got multiple values for argument " + n)
@@ -21,7 +24,10 @@ class StructBehavior(object):
         for n in self.__names__:
             if n not in kw:
                 raise TypeError('Specify a value for %r' % (n,))
-            setattr(self, n, kw[n])
+            setattr(self, n, kw.pop(n))
+
+        if kw:
+            raise TypeError('Got unexpected arguments: ' + ', '.join(kw))
 
 
 _NOT_SPECIFIED = object()
