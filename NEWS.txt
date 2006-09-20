@@ -1,3 +1,6 @@
+0.5.3 (2006-09-20):
+  - structlike.Record now raises TypeError on unexpected args.
+
 0.5.2 (2006-09-12):
   - extime.Time now avoids time_t overflow bugs.
 
