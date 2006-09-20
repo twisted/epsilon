@@ -1,3 +1,6 @@
+0.5.2 (2006-09-12):
+  - extime.Time now avoids time_t overflow bugs.
+
 0.5.1 (2006-06-22):
   - Added hotfix for twisted.test.proto_helpers.StringTransport.
 
