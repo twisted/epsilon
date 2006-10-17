@@ -611,6 +611,8 @@ class Time(object):
         if structTimePlus is None:
             raise ValueError, 'could not parse RFC 2822 date %r' % (rfc822string,)
         offsetInSeconds = structTimePlus[-1]
+        if offsetInSeconds is None:
+            offsetInSeconds = 0
         self = klass.fromStructTime(
             structTimePlus,
             FixedOffset(

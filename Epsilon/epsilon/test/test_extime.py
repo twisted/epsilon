@@ -224,6 +224,7 @@ class TestTime(unittest.TestCase):
         self._checkReference( extime.Time.fromRFC2822('Mon,6 Dec 2004 9:15 -0500'), datetime.datetime(2004, 12, 6, 14, 15) )
         self._checkReference( extime.Time.fromRFC2822('Mon,6 Dec 2004 9:15:16 EST') )
         self._checkReference( extime.Time.fromRFC2822('Monday,6 December 2004 9:15:16 EST') )
+        self._checkReference( extime.Time.fromRFC2822('Monday,6 December 2004 14:15:16') )
         self.assertRaises( ValueError, extime.Time.fromRFC2822, 'some invalid date' )
 
     def test_twentyThirtyEightBug_RFC2822(self):
