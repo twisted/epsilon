@@ -1,3 +1,6 @@
+0.5.4 (2006-10-17):
+  - extime.Time now accepts RFC2822-like dates with no timezone.
+
 0.5.3 (2006-09-20):
   - structlike.Record now raises TypeError on unexpected args.
 
