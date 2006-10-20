@@ -12,6 +12,18 @@ from email.Utils import parsedate_tz
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
 
+def sanitizeStructTime(struct):
+    """
+    Convert struct_time tuples with possibly invalid values to valid
+    ones by substituting the closest valid value.
+    """
+    maxValues = (9999, 12, 31, 23, 59, 59)
+    minValues = (1, 1, 1, 0, 0, 0)
+    newstruct = []
+    for value, maxValue, minValue in zip(struct[:6], maxValues, minValues):
+        newstruct.append(max(minValue, min(value, maxValue)))
+    return tuple(newstruct) + struct[6:]
+
 def _timedeltaToSignHrMin(offset):
     """
     Return a (sign, hour, minute) triple for the offset described by timedelta.
@@ -607,9 +619,11 @@ class Time(object):
         # tm_day, tm_hour, tm_min, tm_sec, tm_wday, tm_yday, tm_isdst), plus a
         # bonus "offset", which is an offset (in _seconds_, of all things).
 
-        structTimePlus = parsedate_tz(rfc822string)
-        if structTimePlus is None:
+        maybeStructTimePlus = parsedate_tz(rfc822string)
+
+        if maybeStructTimePlus is None:
             raise ValueError, 'could not parse RFC 2822 date %r' % (rfc822string,)
+        structTimePlus = sanitizeStructTime(maybeStructTimePlus)
         offsetInSeconds = structTimePlus[-1]
         if offsetInSeconds is None:
             offsetInSeconds = 0

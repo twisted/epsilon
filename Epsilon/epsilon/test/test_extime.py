@@ -206,6 +206,21 @@ class TestTime(unittest.TestCase):
         self._checkReference( extime.Time.fromStructTime((2004, 12, 6, 15, 15, 16, 0, 0, 0), self.CET()) )
         self._checkReference( extime.Time.fromStructTime(time.struct_time((2004, 12, 6, 7, 15, 16, 0, 0, 0)), self.MST()) )
 
+    def testSanitizeStructTime(self):
+        """
+        Ensure that sanitizeStructTime does not modify valid times and
+        rounds down invalid ones.
+        """
+        t1 = (2004, 12, 6, 14, 15, 16, 0, 0, 0)
+        t2 = (2004, 12, 33, 14, 15, 61, 1, 2, 3)
+        cleanT2 = (2004, 12, 31, 14, 15, 59, 1, 2, 3)
+        self.assertEqual(extime.sanitizeStructTime(t1), t1)
+        self.assertEqual(extime.sanitizeStructTime(t2), cleanT2)
+
+        t3 = (2004, -12, 33, 14, 15, 61, 1, 2, 3)
+        cleanT3 = (2004, 1, 31, 14, 15, 59, 1, 2, 3)
+        self.assertEqual(extime.sanitizeStructTime(t3), cleanT3)
+
     def testFromDatetime(self):
         self._checkReference( extime.Time.fromDatetime(datetime.datetime(2004, 12, 6, 14, 15, 16)) )
         self._checkReference( extime.Time.fromDatetime(datetime.datetime(2004, 12, 6, 7, 15, 16, tzinfo=self.MST())) )
