@@ -1,3 +1,7 @@
+0.5.5 (2006-10-21):
+  - extime.Time now accepts RFC2822-like dates with invalid fields: it 
+    rounds them to the nearest valid value.
+
 0.5.4 (2006-10-17):
   - extime.Time now accepts RFC2822-like dates with no timezone.
 
