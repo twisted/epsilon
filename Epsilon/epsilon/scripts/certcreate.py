@@ -20,6 +20,10 @@ class Options(usage.Options):
         ["serial-number", "S", 1, None],
     ]
 
+    optFlags = [
+        ['quiet', 'q']
+    ]
+
 def createSSLCertificate(opts):
     sslopt = {}
     for x, y in (('country','C'),
@@ -33,8 +37,9 @@ def createSSLCertificate(opts):
     serialNumber = int(opts['serial-number'])
     ssc = sslverify.KeyPair.generate().selfSignedCert(serialNumber, **sslopt)
     file(opts['filename'], 'w').write(ssc.dumpPEM())
-    print 'Wrote SSL certificate:'
-    print ssc.inspect()
+    if not opts['quiet']:
+        print 'Wrote SSL certificate:'
+        print ssc.inspect()
     return ssc
 
 def main(args=None):
