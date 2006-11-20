@@ -1,5 +1,9 @@
+0.5.6 (2006-11-20):
+  - Added a --quiet option to Epsilon's certcreate and use it in a few unit
+    tests to avoid spewing garbage during test runs.
+
 0.5.5 (2006-10-21):
-  - extime.Time now accepts RFC2822-like dates with invalid fields: it 
+  - extime.Time now accepts RFC2822-like dates with invalid fields: it
     rounds them to the nearest valid value.
 
 0.5.4 (2006-10-17):
