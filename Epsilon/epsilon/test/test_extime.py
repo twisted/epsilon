@@ -387,9 +387,25 @@ class TestTime(unittest.TestCase):
         self.assertIn(makeTime('2004-05'), makeTime('2004'))
         self.assertNotIn(makeTime('2005-01'), makeTime('2004'))
 
-    def testArithmetic(self):
-        self._checkReference( extime.Time.fromISO8601TimeAndDate('2004-12-03T14:15:16') + datetime.timedelta(days=3) )
-        self._checkReference( extime.Time.fromISO8601TimeAndDate('2004-12-09T14:15:16') - datetime.timedelta(days=3) )
+    def test_arithmetic(self):
+        """
+        Verify that L{datetime.timedelta} objects can be added to and
+        subtracted from L{Time} instances and that L{Time} instances can be
+        subtracted from each other.
+        """
+        time1 = extime.Time.fromISO8601TimeAndDate('2004-12-03T14:15:16')
+        time2 = extime.Time.fromISO8601TimeAndDate('2004-12-09T14:15:16')
+        offset = datetime.timedelta(days=6)
+
+        # Supported operations
+        self.assertEqual(time1 + offset, time2)
+        self.assertEqual(time2 - offset, time1)
+        self.assertEqual(time2 - time1, offset)
+
+        # Make sure unsupported types give back a TypeError
+        self.assertRaises(TypeError, lambda: time1 + 1)
+        self.assertRaises(TypeError, lambda: time1 - 1)
+
 
     def testOneDay(self):
         day = self._createReference().oneDay()
