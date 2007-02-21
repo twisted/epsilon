@@ -923,6 +923,25 @@ class Time(object):
         return Time.fromDatetime(self._time + addend)
 
     def __sub__(self, subtrahend):
-        if not isinstance(subtrahend, datetime.timedelta):
-            raise TypeError, 'expected a datetime.timedelta instance'
-        return Time.fromDatetime(self._time - subtrahend)
+        """
+        Implement subtraction of an interval or another time from this one.
+
+        @type subtrahend: L{datetime.timedelta} or L{Time}
+
+        @param subtrahend: The object to be subtracted from this one.
+
+        @rtype: L{datetime.timedelta} or L{Time}
+
+        @return: If C{subtrahend} is a L{datetime.timedelta}, the result is
+        a L{Time} instance which is offset from this one by that amount.  If
+        C{subtrahend} is a L{Time}, the result is a L{datetime.timedelta}
+        instance which gives the difference between it and this L{Time}
+        instance.
+        """
+        if isinstance(subtrahend, datetime.timedelta):
+            return Time.fromDatetime(self._time - subtrahend)
+
+        if isinstance(subtrahend, Time):
+            return self.asDatetime() - subtrahend.asDatetime()
+
+        return NotImplemented
