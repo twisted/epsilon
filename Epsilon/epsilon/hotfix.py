@@ -50,7 +50,14 @@ def require(packageName, fixName):
         else:
             from epsilon.hotfixes import proto_helpers_stringtransport
             proto_helpers_stringtransport.install()
-        
+
+    elif (packageName, fixName) == ("twisted", "internet_task_Clock"):
+        from twisted.internet.task import Clock
+        from twisted.internet import base
+        from twisted import version
+        from epsilon.hotfixes import internet_task_clock
+        if internet_task_clock.clockIsBroken():
+            internet_task_clock.install()
     else:
         raise NoSuchHotfix(packageName, fixName)
 
