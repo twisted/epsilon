@@ -58,6 +58,11 @@ def require(packageName, fixName):
         from epsilon.hotfixes import internet_task_clock
         if internet_task_clock.clockIsBroken():
             internet_task_clock.install()
+    elif (packageName, fixName) == ("twisted", "trial_assertwarns"):
+        from twisted.trial.unittest import TestCase
+        if not hasattr(TestCase, "failUnlessWarns"):
+            from epsilon.hotfixes import trial_assertwarns
+            trial_assertwarns.install()
     else:
         raise NoSuchHotfix(packageName, fixName)
 
