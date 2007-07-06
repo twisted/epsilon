@@ -2,7 +2,7 @@
 """
 failUnlessWarns assertion from twisted.trial in the pending 2.6 release.
 
-This is from r20538; it should be updated as bugfixes are made.
+This is from r20668; it should be updated as bugfixes are made.
 """
 
 import warnings
@@ -26,23 +26,19 @@ def failUnlessWarns(self, category, message, filename, f,
     @return: the result of the original function C{f}.
     """
     warningsShown = []
-    def showwarning(*args):
+    def warnExplicit(*args):
         warningsShown.append(args)
 
-    origshow = warnings.showwarning
-    globs = f.func_globals
-    origregistry = globs.get('__warningregistry__', {})
+    origExplicit = warnings.warn_explicit
     try:
-        warnings.showwarning = showwarning
-        globs['__warningregistry__'] = {}
+        warnings.warn_explicit = warnExplicit
         result = f(*args, **kwargs)
     finally:
-        warnings.showwarning = origshow
-        globs['__warningregistry__'] = origregistry
+        warnings.warn_explicit = origExplicit
 
     self.assertEqual(len(warningsShown), 1, pformat(warningsShown))
-    gotMessage, gotCategory, gotFilename, lineno = warningsShown[0]
-    self.assertEqual(gotMessage.args, message)
+    gotMessage, gotCategory, gotFilename, lineno = warningsShown[0][:4]
+    self.assertEqual(gotMessage, message)
     self.assertIdentical(gotCategory, category)
 
     # Use starts with because of .pyc/.pyo issues.
