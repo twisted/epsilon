@@ -30,7 +30,7 @@ def _regeneratePluginCache(pluginPackages):
 
 def regeneratePluginCache(dist, pluginPackages):
     if 'install' in dist.commands:
-        sys.path.insert(0, dist.command_obj['install'].install_lib)
+        sys.path.insert(0, os.path.abspath(dist.command_obj['install'].install_lib))
         _regeneratePluginCache(pluginPackages)
 
 def autosetup(**kw):
