@@ -236,19 +236,18 @@ class ReporterTestCase(unittest.TestCase):
             os.path.getsize(path) + os.path.getsize(os.path.join(path, 'foo')))
 
 
-    def testGetSizeBrokenSymlink(self):
+    def test_getOneSizeBrokenSymlink(self):
         """
-        Test that a broken symlink inside a directory passed to getSize doesn't
+        Test that a broken symlink inside a directory passed to getOneSize doesn't
         cause it to freak out.
         """
-        path = self.mktemp()
-        os.makedirs(path)
-        presize = benchmark.getSize(filepath.FilePath(path))
-        print presize
-        os.symlink('abcdefg', os.path.join(path, 'foo'))
+        path = filepath.FilePath(self.mktemp())
+        path.makedirs()
+        link = path.child('foo')
+        os.symlink('abcdefg', link.path)
         self.assertEquals(
-            benchmark.getSize(filepath.FilePath(path)),
-            presize + len('abcdefg'))
+            benchmark.getOneSize(link),
+            len('abcdefg'))
 
 
 
