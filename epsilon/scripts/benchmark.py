@@ -437,20 +437,25 @@ def getSize(p):
     @type p: L{twisted.python.filepath.FilePath}
     @return: The size, in bytes, of the given path and all its children.
     """
-    result = 0
-    for ch in p.walk():
-        try:
-            result += ch.getsize()
-        except OSError, e:
-            if e.errno == errno.ENOENT:
-                # XXX FilePath is broken
-                if os.path.islink(ch.path):
-                    result += len(os.readlink(ch.path))
-                else:
-                    raise
+    return sum(getOneSize(ch) for ch in p.walk())
+
+
+def getOneSize(ch):
+    """
+    @type ch: L{twisted.python.filepath.FilePath}
+    @return: The size, in bytes, of the given path only.
+    """
+    try:
+        return ch.getsize()
+    except OSError, e:
+        if e.errno == errno.ENOENT:
+            # XXX FilePath is broken
+            if os.path.islink(ch.path):
+                return len(os.readlink(ch.path))
             else:
                 raise
-    return result
+        else:
+            raise
 
 
 
