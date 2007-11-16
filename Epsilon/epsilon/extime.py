@@ -795,17 +795,18 @@ class Time(object):
             now = now.asDatetime(tzinfo)
         dtime = self.asDatetime(tzinfo)
 
+        # Same day?
         if dtime.date() == now.date():
             if self.isAllDay():
                 return 'all day'
             return dtime.strftime('%I:%M %p').lower()
-        elif dtime.date().year == now.date().year:
-            res = dtime.strftime('%b, %I:%M %p').lower().capitalize()
-            res = str(dtime.date().day) + ' ' + res
-            return res
         else:
-            res = dtime.strftime('%b %Y, %I:%M %p').lower().capitalize()
-            res = str(dtime.date().day) + ' ' + res
+            res = str(dtime.date().day) + dtime.strftime(' %b')  # day + month
+            # Different year?
+            if not dtime.date().year == now.date().year:
+                res += dtime.strftime(' %Y')
+            if not self.isAllDay():
+                res += dtime.strftime(', %I:%M %p').lower()
             return res
 
     #
