@@ -4,18 +4,48 @@
 Automation for most of the release process for Divmod projects.
 """
 
-import sys
+import sys, re
 from os import chdir
 
 from twisted.python.reflect import namedModule
 from twisted.python.versions import Version
 from twisted.python.usage import Options
 from twisted.python.filepath import FilePath
-from twisted.python.release import (
-    sh, verstringMatcher, replaceProjectVersion,
-    runChdirSafe, Project)
+from twisted.python.release import sh, runChdirSafe
 
 from combinator.branchmgr import theBranchManager
+from epsilon.structlike import record
+
+class Project(record("name initPath package version")):
+    """
+    Container for information about a particular Divmod project being released.
+
+    @ivar name: The name of the project.
+    @ivar initPath: A C{FilePath} to the Python package of the project.
+    @ivar package: A module object, the package for this project.
+    @ivar version: The current version of this project.
+    """
+
+verstringMatcher = re.compile(r"^([0-9]+)\.([0-9]+)\.([0-9]+)$")
+
+
+def replaceProjectVersion(filename, newversion):
+    """
+    Write version specification code into the given filename, which
+    sets the version to the given version number.
+
+    @param filename: A filename which is most likely a "_version.py"
+    under some Twisted project.
+    @param newversion: A sequence of three numbers.
+    """
+    f = open(filename, 'w')
+    f.write('''\
+# This is an auto-generated file. Use Epsilon/bin/release-divmod to update.
+from twisted.python import versions
+version = versions.Version(__name__[:__name__.rfind('.')], %s, %s, %s)
+''' % tuple(newversion))
+    f.close()
+
 
 
 def namesToPaths(projectNames, verbose=True):
@@ -51,7 +81,8 @@ def namesToPaths(projectNames, verbose=True):
         realName = projPackagePath.parent().parent().basename()
         projectObjects.append(Project(name=realName,
                                       initPath=projPackagePath,
-                                      package=projPackage))
+                                      package=projPackage,
+                                      version=None))
         if verbose:
             print 'Found', projName, 'as', realName, 'at', projPackagePath.path
     return projectObjects

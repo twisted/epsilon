@@ -6,14 +6,13 @@ from sys import executable, version_info
 from twisted.trial.unittest import TestCase
 from twisted.python.versions import Version
 from twisted.python.filepath import FilePath
-from twisted.python.release import Project
 
 import epsilon
 
 from epsilon.release import (
     namesToPaths, inputNewVersionWithDefault, updateVersionFiles, doCommit,
     doExport, doSourceDist, doSourceUnpack, doInstall, runTests, makeTags,
-    collectTarballs)
+    collectTarballs, replaceProjectVersion, Project)
 
 
 class ReleaseTests(TestCase):
@@ -24,6 +23,17 @@ class ReleaseTests(TestCase):
         self.currentDirectory = None
         self.commands = []
 
+    def test_replaceProjectVersion(self):
+        """
+        Test that replaceProjectVersion generates a _version.py correctly.
+        """
+        f = self.mktemp()
+        replaceProjectVersion(f, (7,8,9))
+        self.assertEqual(open(f).read(), """\
+# This is an auto-generated file. Use Epsilon/bin/release-divmod to update.
+from twisted.python import versions
+version = versions.Version(__name__[:__name__.rfind('.')], 7, 8, 9)
+""")
 
     def test_namesToPaths(self):
         """
@@ -48,7 +58,8 @@ class ReleaseTests(TestCase):
 
         packagePath = projectPath.child('fakeproject')
         initPath = packagePath.child('__init__.py')
-        project = Project(name="FakeProject", initPath=initPath)
+        project = Project(name="FakeProject", initPath=initPath,
+                          package=None, version=None)
 
         def checkPrompt(prompt):
             self.assertEqual(prompt, "New version for FakeProject (default 0.9.99)? ")
@@ -69,7 +80,8 @@ class ReleaseTests(TestCase):
         as provided by repeated calls to L{inputNewVersionWithDefault}.
         """
         initPath = FilePath(self.mktemp())
-        project = Project(name="Epsilon", initPath=initPath)
+        project = Project(name="Epsilon", initPath=initPath,
+                          package=None, version=None)
         def checkReplaceVersion(path, version):
             self.assertEqual(path, initPath.sibling("_version.py").path)
 
@@ -153,7 +165,8 @@ class ReleaseTests(TestCase):
         C{doSourceDist} should execute a shell command which runs the I{sdist}
         subcommand of the I{setup.py} for each project given.
         """
-        project = Project(name="Foo", initPath=FilePath(self.mktemp()))
+        project = Project(name="Foo", initPath=FilePath(self.mktemp()),
+                          package=None, version=None)
         doSourceDist(
             [project], FilePath("/test/path"), False,
             sh=self.fakeShell, chdir=self.fakeChdir)
@@ -171,7 +184,7 @@ class ReleaseTests(TestCase):
         each command in the dist directory of the corresponding project.
         """
         project = Project(name="Foo", initPath=FilePath(self.mktemp()),
-                          version=Version("Foo", 1, 2, 3))
+                          version=Version("Foo", 1, 2, 3), package=None)
 
         doSourceUnpack(
             [project], FilePath("/test/path"), False,
@@ -190,7 +203,7 @@ class ReleaseTests(TestCase):
         each command in the unpacked source directory of each project.
         """
         project = Project(name="Foo", initPath=FilePath(self.mktemp()),
-                          version=Version("Foo", 1, 2, 3))
+                          version=Version("Foo", 1, 2, 3), package=None)
 
         installedPath = doInstall(
             [project], FilePath("/test/path"), False,
@@ -211,7 +224,8 @@ class ReleaseTests(TestCase):
         prefix = "/test/path/lib/python%d.%d/site-packages" % version_info[:2]
         initPath = FilePath(prefix).child("foo").child("__init__.py")
         runTests(
-            [Project(name="Foo", initPath=initPath)],
+            [Project(name="Foo", initPath=initPath,
+                     package=None, version=None)],
             FilePath("/test/path"), False,
             sh=self.fakeShell)
 
@@ -229,7 +243,7 @@ class ReleaseTests(TestCase):
         of the given release branch for each given project.
         """
         project = Project(name="Foo", initPath=self.mktemp(),
-                          version=Version("Foo", 1, 2, 3))
+                          version=Version("Foo", 1, 2, 3), package=None)
         makeTags(
             [project], "Stuff",
             "svn+ssh://divmod.org/svn/Stuff/branches/release-1",
@@ -256,7 +270,7 @@ class ReleaseTests(TestCase):
                 moves.append((self, target))
         FakeFilePath.clonePath = FakeFilePath
         project = Project(name="Foo", initPath=FakeFilePath(self.mktemp()),
-                          version=Version("Foo", 1, 2, 3))
+                          version=Version("Foo", 1, 2, 3), package=None)
         releasePath = FilePath(self.mktemp())
         collectTarballs([project], FakeFilePath("/test/path"), releasePath)
         self.assertEqual(
