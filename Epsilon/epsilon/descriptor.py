@@ -1,3 +1,4 @@
+# -*- test-case-name: epsilon.test.test_descriptor -*-
 
 """
 Provides an 'attribute' class for one-use descriptors.
@@ -131,10 +132,14 @@ def requiredAttribute(requiredAttributeName):
     """
     class RequiredAttribute(attribute):
         def get(self):
-            raise AttributeError(
-                ('Required attribute %r has not been changed'
-                    ' from its default value on %r' % (
-                        requiredAttributeName, self)))
+            if requiredAttributeName not in self.__dict__:
+                raise AttributeError(
+                    ('Required attribute %r has not been changed'
+                     ' from its default value on %r' % (
+                            requiredAttributeName, self)))
+            return self.__dict__[requiredAttributeName]
+        def set(self, value):
+            self.__dict__[requiredAttributeName] = value
     return RequiredAttribute
 
 

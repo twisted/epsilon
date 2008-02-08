@@ -1,6 +1,7 @@
 """
 Tests for L{epsilon.descriptor}.
 """
+
 from twisted.trial import unittest
 
 from epsilon import descriptor
@@ -36,24 +37,39 @@ class DescriptorTest(unittest.TestCase):
         t = Test2()
         self.assertEquals(Test2.a.__doc__, 'stuff')
         self.assertEquals(t.a, 10)
-        def _(): t.a = 1
-        self.assertRaises(AttributeError, _)
-        def _(): del t.a
-        self.assertRaises(AttributeError, _)
+        self.assertRaises(AttributeError, setattr, t, 'a', 1)
+        self.assertRaises(AttributeError, delattr, t, 'a')
 
 
 
-class AbstractFoo:
+class AbstractClassic:
     """
-    Toy class used by L{RequiredAttributeTestCase}.
+    Toy classic class used by L{RequiredAttributeTestCase}.
     """
     foo = descriptor.requiredAttribute('foo')
+    bar = descriptor.requiredAttribute('bar')
 
 
-
-class ManifestFoo(AbstractFoo):
+class ManifestClassic(AbstractClassic):
     """
-    Toy class used by L{RequiredAttributeTestCase}.
+    Toy classic class used by L{RequiredAttributeTestCase}.
+    """
+    foo = 'bar'
+
+
+
+class AbstractNewStyle(object):
+    """
+    Toy new-style class used by L{RequiredAttributeTestCase}.
+    """
+    foo = descriptor.requiredAttribute('foo')
+    bar = descriptor.requiredAttribute('bar')
+
+
+
+class ManifestNewStyle(AbstractNewStyle):
+    """
+    Toy classic class used by L{RequiredAttributeTestCase}.
     """
     foo = 'bar'
 
@@ -63,24 +79,94 @@ class RequiredAttributeTestCase(unittest.TestCase):
     """
     Tests for L{descriptor.requiredAttribute}.
     """
-    def test_defaultAccess(self):
-        """
-        Accessing a L{descriptor.requiredAttribute} should throw a
-        C{AttributeError} if its value has not been overridden.
-        """
-        abstractFoo = AbstractFoo()
-        exception = self.assertRaises(AttributeError, lambda: abstractFoo.foo)
+    def _defaultAccess(self, abstractFoo):
+        exception = self.assertRaises(AttributeError, getattr, abstractFoo, 'foo')
         self.assertEqual(len(exception.args), 1)
         self.assertEqual(
             exception.args[0],
             ("Required attribute 'foo' has not been changed"
                 " from its default value on %r" % (abstractFoo,)))
 
-
-    def test_derivedAccess(self):
+    def test_defaultAccessClassic(self):
         """
-        If a derived class sets a new value for a
+        Accessing a L{descriptor.requiredAttribute} on a classic class raises
+        an C{AttributeError} if its value has not been overridden.
+        """
+        abstractFoo = AbstractClassic()
+        self._defaultAccess(abstractFoo)
+
+
+    def test_defaultAccessNewStyle(self):
+        """
+        Accessing a L{descriptor.requiredAttribute} on a new-style class raises
+        an C{AttributeError} if its value has not been overridden.
+        """
+        abstractFoo = AbstractNewStyle()
+        self._defaultAccess(abstractFoo)
+
+
+    def _derivedAccess(self, manifestFoo):
+        self.assertEqual(manifestFoo.foo, 'bar')
+
+
+    def test_derivedAccessClassic(self):
+        """
+        If a derived classic class sets a new value for a
         L{descriptor.requiredAttribute}, things should work fine.
         """
-        manifestFoo = ManifestFoo()
-        self.assertEqual(manifestFoo.foo, 'bar')
+        manifestFoo = ManifestClassic()
+        self._derivedAccess(manifestFoo)
+
+
+    def test_derivedAccessNewStyle(self):
+        """
+        If a new-style derived class sets a new value for a
+        L{descriptor.requiredAttribute}, things should work fine.
+        """
+        manifestFoo = ManifestNewStyle()
+        self._derivedAccess(manifestFoo)
+
+
+    def _instanceAccess(self, abstractMadeManifest):
+        abstractMadeManifest.foo = 123
+        self.assertEqual(abstractMadeManifest.foo, 123)
+
+
+    def test_instanceAccessClassic(self):
+        """
+        Accessing a L{descriptor.requiredAttribute} after setting a value for
+        it on an instance of a classic class evaluates to that value.
+        """
+        abstractMadeManifest = AbstractClassic()
+        self._instanceAccess(abstractMadeManifest)
+
+
+    def test_instanceAccessNewStyle(self):
+        """
+        Accessing a L{descriptor.requiredAttribute} after setting a value for
+        it on an instance of a new-style class evaluates to that value.
+        """
+        abstractMadeManifest = AbstractNewStyle()
+        self._instanceAccess(abstractMadeManifest)
+
+
+    def test_instanceAttributesUnrelatedClassic(self):
+        """
+        Accessing one L{descriptor.requiredAttribute} after setting a value for
+        a different L{descriptor.requiredAttribute} raises an
+        L{AttributeError}.
+        """
+        partiallyAbstract = AbstractClassic()
+        partiallyAbstract.bar = 123
+        self._defaultAccess(partiallyAbstract)
+
+
+    def test_instanceAttributesUnrelatedNewStyle(self):
+        """
+        Accessing one L{descriptor.requiredAttribute} after setting a value for
+        a different L{descriptor.requiredAttribute} raises an
+        L{AttributeError}.
+        """
+        partiallyAbstract = AbstractNewStyle()
+        partiallyAbstract.bar = 123
+        self._defaultAccess(partiallyAbstract)
