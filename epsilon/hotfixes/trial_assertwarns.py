@@ -1,12 +1,9 @@
 
 """
-failUnlessWarns assertion from twisted.trial in the pending 2.6 release.
-
-This is from r20668; it should be updated as bugfixes are made.
+failUnlessWarns assertion from twisted.trial in Twisted 8.0.
 """
 
 import warnings
-from pprint import pformat
 
 def failUnlessWarns(self, category, message, filename, f,
                    *args, **kwargs):
@@ -36,8 +33,13 @@ def failUnlessWarns(self, category, message, filename, f,
     finally:
         warnings.warn_explicit = origExplicit
 
-    self.assertEqual(len(warningsShown), 1, pformat(warningsShown))
-    gotMessage, gotCategory, gotFilename, lineno = warningsShown[0][:4]
+    if not warningsShown:
+        self.fail("No warnings emitted")
+    first = warningsShown[0]
+    for other in warningsShown[1:]:
+        if other[:2] != first[:2]:
+            self.fail("Can't handle different warnings")
+    gotMessage, gotCategory, gotFilename, lineno = first[:4]
     self.assertEqual(gotMessage, message)
     self.assertIdentical(gotCategory, category)
 
