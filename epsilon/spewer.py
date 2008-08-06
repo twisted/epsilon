@@ -1,6 +1,7 @@
 
 import sys
 import signal
+import threading
 
 from twisted.application import service
 from twisted.python import reflect, log
@@ -16,10 +17,12 @@ class Tracer(object):
     def install(self):
         self.installed = True
         sys.settrace(self.trace)
+        threading.settrace(self.trace)
 
     def uninstall(self):
         self.installed = False
         sys.settrace(None)
+        threading.setttrace(None)
 
     def toggle(self):
         if self.installed:
@@ -82,7 +85,8 @@ class Spewer(Tracer):
         else:
             k = ''
 
-        log.msg("%s%s%s(%s)" % (
+        print ("%X %s%s%s(%s)" % (
+            id(threading.currentThread()),
             self.callDepth * ' ',
             k,
             frame.f_code.co_name,
@@ -90,13 +94,15 @@ class Spewer(Tracer):
 
     def trace_RETURN(self, frame, arg):
         if arg is not None:
-            log.msg("%s<= %s" % (
+            print ("%X %s<= %s" % (
+                id(threading.currentThread()),
                 self.callDepth * ' ',
                 reflect.safe_repr(arg),))
         self.callDepth = max(0, self.callDepth - 1)
 
     def trace_EXCEPTION(self, frame, arg):
-        log.msg("%s^- %s" % (
+        print ("%X %s^- %s" % (
+            id(threading.currentThread()),
             self.callDepth * ' ',
             reflect.safe_repr(arg),))
         self.callDepth = max(0, self.callDepth - 1)
