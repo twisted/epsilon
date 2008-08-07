@@ -50,6 +50,7 @@ def require(packageName, fixName):
         else:
             from epsilon.hotfixes import proto_helpers_stringtransport
             proto_helpers_stringtransport.install()
+
     elif (packageName, fixName) == ("twisted", "internet_task_Clock"):
         from twisted.internet.task import Clock
         from twisted.internet import base
@@ -62,12 +63,6 @@ def require(packageName, fixName):
         if not hasattr(TestCase, "failUnlessWarns"):
             from epsilon.hotfixes import trial_assertwarns
             trial_assertwarns.install()
-    elif (packageName, fixName) == ("twisted", "plugin_package_paths"):
-        try:
-            from twisted.plugin import pluginPackagePaths
-        except ImportError:
-            from epsilon.hotfixes import plugin_package_paths
-            plugin_package_paths.install()
     else:
         raise NoSuchHotfix(packageName, fixName)
 
