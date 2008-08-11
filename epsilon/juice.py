@@ -8,13 +8,12 @@ import warnings, pprint
 from twisted.internet.main import CONNECTION_LOST
 from twisted.internet.defer import Deferred, maybeDeferred, fail
 from twisted.internet.protocol import ServerFactory, ClientFactory
+from twisted.internet.ssl import Certificate
 from twisted.python.failure import Failure
 from twisted.python import log, filepath
 
 from epsilon.liner import LineReceiver
 from epsilon import extime
-
-from epsilon.sslverify import Certificate, problemsFromTransport, PeerVerifyError
 
 ASK = '_ask'
 ANSWER = '_answer'
@@ -834,12 +833,6 @@ class Juice(LineReceiver, JuiceParserBase):
                                                                     self._transportPeer))
         self._outstandingRequests = {}
         self._requestBuffer = []
-        self._sslVerifyProblems = ()
-        # ^ Later this will become a mutable list - we can't get the handle
-        # during connection shutdown thanks to the fact that Twisted destroys
-        # the socket on our transport before notifying us of a lost connection
-        # (which I guess is reasonable - the socket is dead by then) See a few
-        # lines below in startTLS for details.  --glyph
         LineReceiver.makeConnection(self, transport)
 
     _startingTLSBuffer = None
@@ -852,10 +845,6 @@ class Juice(LineReceiver, JuiceParserBase):
             self.hostCertificate = certificate
             self._justStartedTLS = True
             self.transport.startTLS(certificate.options(*verifyAuthorities))
-            # Remember that mutable list that we were just talking about?  Here
-            # it is.  sslverify.py takes care of populating this list as
-            # necessary. --glyph
-            self._sslVerifyProblems = problemsFromTransport(self.transport)
             stlsb = self._startingTLSBuffer
             if stlsb is not None:
                 self._startingTLSBuffer = None
@@ -877,28 +866,12 @@ class Juice(LineReceiver, JuiceParserBase):
         return LineReceiver.dataReceived(self, data)
 
     def connectionLost(self, reason):
-        log.msg("%s %s connection lost (HOST:%s PEER:%s)" % (self.isClient and 'client' or 'server',
-                                                             self.__class__.__name__,
-                                                             self._transportHost,
-                                                             self._transportPeer))
-        # XXX this may be a slight oversimplification, but I believe that if
-        # there are pending SSL errors, they _are_ the reason that the
-        # connection was lost.  a totally correct implementation of this would
-        # set up a simple state machine to track whether any bytes were
-        # received after startTLS was called.  --glyph
-        problems = self._sslVerifyProblems
-        if problems:
-            failReason = Failure(problems[0])
-        elif self._justStartedTLS:
-            # We just started TLS and haven't received any data.  This means
-            # the other connection didn't like our cert (although they may not
-            # have told us why - later Twisted should make 'reason' into a TLS
-            # error.)
-            failReason = PeerVerifyError(
-                "Peer rejected our certificate for an unknown reason.")
-        else:
-            failReason = reason
-        self.failAllOutgoing(failReason)
+        log.msg("%s %s connection lost (HOST:%s PEER:%s)" % (
+                self.isClient and 'client' or 'server',
+                self.__class__.__name__,
+                self._transportHost,
+                self._transportPeer))
+        self.failAllOutgoing(reason)
         if self.innerProtocol is not None:
             self.innerProtocol.connectionLost(reason)
             if self.innerProtocolClientFactory is not None:
