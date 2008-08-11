@@ -1,10 +1,10 @@
-# Copyright 2005 Divmod, Inc.  See LICENSE file for details
+# Copyright 2005-2008 Divmod, Inc.  See LICENSE file for details
 
 import sys
 
 from twisted.python import usage
+from twisted.internet.ssl import KeyPair
 
-from epsilon import sslverify
 
 class Options(usage.Options):
     optParameters = [
@@ -24,6 +24,8 @@ class Options(usage.Options):
         ['quiet', 'q']
     ]
 
+
+
 def createSSLCertificate(opts):
     sslopt = {}
     for x, y in (('country','C'),
@@ -35,12 +37,14 @@ def createSSLCertificate(opts):
                  ('email','emailAddress')):
         sslopt[y] = opts[x]
     serialNumber = int(opts['serial-number'])
-    ssc = sslverify.KeyPair.generate().selfSignedCert(serialNumber, **sslopt)
+    ssc = KeyPair.generate().selfSignedCert(serialNumber, **sslopt)
     file(opts['filename'], 'w').write(ssc.dumpPEM())
     if not opts['quiet']:
         print 'Wrote SSL certificate:'
         print ssc.inspect()
     return ssc
+
+
 
 def main(args=None):
     """
