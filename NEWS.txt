@@ -1,3 +1,10 @@
+0.5.10 (2008-08-12):
+  - Added the epsilon.caseless module, with case-insensitive string
+    wrappers.
+  - Better repr() for epsilon.structlike.record added.
+  - epsilon.juice now uses twisted.internet.ssl instead of epsilon.sslverify.
+  - 
+
 0.5.9 (2008-01-18):
 
 0.5.8 (2007-11-27):
