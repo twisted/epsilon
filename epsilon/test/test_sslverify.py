@@ -6,11 +6,10 @@ from OpenSSL import SSL
 from OpenSSL.crypto import PKey, X509, X509Req
 from OpenSSL.crypto import TYPE_RSA
 
-from twisted.trial import unittest
+from twisted.trial import unittest, util
 from twisted.internet import protocol, defer, reactor
 from twisted.python import log
 
-from epsilon import sslverify
 
 counter = itertools.count().next
 def makeCertificate(**kw):
@@ -79,13 +78,26 @@ class OpenSSLOptions(unittest.TestCase):
     serverPort = clientConn = None
     onServerLost = onClientLost = None
 
+    suppress = [
+        util.suppress(
+            message="Use twisted.internet.ssl instead of epsilon.sslverify.",
+            category=DeprecationWarning)]
+
     def setUpClass(self):
+        # Import the module here so that the warning emitted at import time
+        # gets suppressed.  Modify a global instead of setting an attribute
+        # or some other such nice thing so as not to have to change a bunch
+        # of code which is just going to be deleted anyway. -exarkun
+        global sslverify
+        from epsilon import sslverify
+
         self.sKey, self.sCert = makeCertificate(
             O="Server Test Certificate",
             CN="server")
         self.cKey, self.cCert = makeCertificate(
             O="Client Test Certificate",
             CN="client")
+
 
     def tearDown(self):
         if self.serverPort is not None:
