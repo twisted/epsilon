@@ -1,6 +1,11 @@
 # -*- test-case-name: epsilon.test.test_sslverify -*-
 # Copyright 2005 Divmod, Inc.  See LICENSE file for details
 
+import warnings
+warnings.warn(
+    "Use twisted.internet.ssl instead of epsilon.sslverify.",
+    category=DeprecationWarning)
+
 import itertools, md5
 from OpenSSL import SSL, crypto
 
