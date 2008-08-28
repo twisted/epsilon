@@ -4,6 +4,9 @@
 Tests for L{epsilon.ampauth}.
 """
 
+import epsilon.hotfix
+epsilon.hotfix.require('twisted', 'loopbackasync_reentrancy')
+
 from sha import sha
 
 from zope.interface import implements
