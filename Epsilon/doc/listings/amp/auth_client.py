@@ -6,10 +6,10 @@ issues a command.
 """
 
 from twisted.internet.protocol import ClientCreator
-from twisted.internet import reactor
 from twisted.cred.credentials import UsernamePassword
 from twisted.protocols.amp import AMP
 
+from epsilon.react import react
 from epsilon.ampauth import login
 
 from auth_server import Add
@@ -23,24 +23,15 @@ def display(result):
     print result
 
 
-def error(err):
-    print err.getErrorMessage()
-
-
-def finish(ignored):
-    reactor.stop()
-
-
-def main():
+def main(reactor):
     cc = ClientCreator(reactor, AMP)
     d = cc.connectTCP('localhost', 7805)
     d.addCallback(login, UsernamePassword("testuser", "examplepass"))
     d.addCallback(add)
     d.addCallback(display)
-    d.addErrback(error)
-    d.addCallback(finish)
-    reactor.run()
+    return d
 
 
 if __name__ == '__main__':
-    main()
+    from twisted.internet import reactor
+    react(reactor, main, [])
