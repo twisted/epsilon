@@ -1,3 +1,7 @@
+0.5.11 (2008-10-02):
+  - epsilon.amprouter added, providing support for multiplexing
+    unrelated AMP communications over the same connection.
+
 0.5.10 (2008-08-12):
   - Added the epsilon.caseless module, with case-insensitive string
     wrappers.
