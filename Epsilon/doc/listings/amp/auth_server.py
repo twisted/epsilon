@@ -8,13 +8,12 @@ addition command.
 from sys import stdout
 
 from twisted.python.log import startLogging, msg
-from twisted.internet.protocol import ServerFactory
 from twisted.internet import reactor
 from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse
 from twisted.cred.portal import Portal
 from twisted.protocols.amp import IBoxReceiver, Command, Integer, AMP
 
-from epsilon.ampauth import CredReceiver, CredAMPServerFactory
+from epsilon.ampauth import CredAMPServerFactory
 
 
 class Add(Command):

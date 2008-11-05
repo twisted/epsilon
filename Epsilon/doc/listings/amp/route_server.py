@@ -28,7 +28,7 @@ def main():
     startLogging(stdout)
     serverFactory = AMPRouteServerFactory()
     serverFactory.routeProtocol = Counter
-    port = reactor.listenTCP(7805, serverFactory)
+    reactor.listenTCP(7805, serverFactory)
     reactor.run()
 
 
