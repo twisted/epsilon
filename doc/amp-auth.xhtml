@@ -48,12 +48,14 @@
     <h2>Servers</h2>
 
     <p>
-      <code class="API" base="epsilon.ampauth">CredReceiver</code> is an
-      <code>AMP</code> subclass which implements responders for commands which
-      allow a client to prove their identity.  It uses a <code>Portal</code> to
-      handle these commands and retrieve an <code class="API"
-      base="twisted.protocols.amp">IBoxReceiver</code> which will be used to
-      handle all further AMP boxes it receives.
+      <code class="API" base="epsilon.ampauth">CredAMPServerFactory</code>
+      is a factory for the <code class="API"
+      base="epsilon.ampauth">CredReceiver</code> protocol, an
+      <code>AMP</code> subclass which implements responders for commands
+      which allow a client to prove their identity.  It uses a
+      <code>Portal</code> to handle these commands and retrieve an <code
+      class="API" base="twisted.protocols.amp">IBoxReceiver</code> which
+      will be used to handle all further AMP boxes it receives.
     </p>
 
     <a href="listings/amp/auth_server.py" class="py-listing">
