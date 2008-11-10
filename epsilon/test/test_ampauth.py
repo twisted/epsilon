@@ -23,8 +23,9 @@ from twisted.protocols.loopback import loopbackAsync
 from twisted.trial.unittest import TestCase
 
 from epsilon.ampauth import (
-    _AMPUsernamePassword, _calcResponse, UnhandledCredentials, CredReceiver,
-    PasswordLogin, PasswordChallengeResponse, CredAMPServerFactory, login)
+    _AMPOneTimePad, _AMPUsernamePassword, _calcResponse, UnhandledCredentials,
+    CredReceiver, PasswordLogin, OTPLogin, PasswordChallengeResponse,
+    OneTimePadChecker, CredAMPServerFactory, login)
 
 __metaclass__ = type
 
@@ -91,6 +92,58 @@ class CredReceiverTests(TestCase):
         self.server.portal = self.portal
         self.client = AMP()
         self.finished = loopbackAsync(self.server, self.client)
+
+
+    def test_otpLogin(self):
+        """
+        L{CredReceiver.otpLogin} returns without error if the pad is valid.
+        """
+        PAD = 'test_otpLogin'
+        self.portal.registerChecker(OneTimePadChecker({PAD: 'user'}))
+        d = self.server.otpLogin(PAD)
+        def cbLoggedIn(result):
+            self.assertEqual(result, {})
+        d.addCallback(cbLoggedIn)
+        return d
+
+
+    def test_otpLoginUnauthorized(self):
+        """
+        L{CredReceiver.otpLogin} should fail with L{UnauthorizedLogin} if an
+        invalid pad is received.
+        """
+        self.portal.registerChecker(OneTimePadChecker({}))
+        return self.assertFailure(
+            self.server.otpLogin('test_otpLoginUnauthorized'),
+            UnauthorizedLogin)
+
+
+    def test_otpLoginNotImplemented(self):
+        """
+        L{CredReceiver.otpLogin} should fail with L{NotImplementedError} if
+        the realm raises L{NotImplementedError} when asked for the avatar.
+        """
+        def noAvatar(avatarId, mind, *interfaces):
+            raise NotImplementedError()
+        self.realm.requestAvatar = noAvatar
+
+        PAD = 'test_otpLoginNotImplemented'
+        self.portal.registerChecker(OneTimePadChecker({PAD: 'user'}))
+        return self.assertFailure(
+            self.server.otpLogin(PAD), NotImplementedError)
+
+
+    def test_otpLoginResponder(self):
+        """
+        L{CredReceiver} responds to the L{OTPLogin} command.
+        """
+        PAD = 'test_otpLoginResponder'
+        self.portal.registerChecker(OneTimePadChecker({PAD: 'user'}))
+        d = self.client.callRemote(OTPLogin, pad=PAD)
+        def cbLoggedIn(result):
+            self.assertEqual(result, {})
+        d.addCallback(cbLoggedIn)
+        return d
 
 
     def test_passwordLoginDifferentChallenges(self):
@@ -334,3 +387,44 @@ class CredAMPServerFactoryTests(TestCase):
         proto = factory.buildProtocol(None)
         self.assertIsInstance(proto, CredReceiver)
         self.assertIdentical(proto.portal, portal)
+
+
+
+class OneTimePadCheckerTests(TestCase):
+    """
+    Tests for L{OneTimePadChecker}.
+    """
+    def test_requestAvatarId(self):
+        """
+        L{OneTimePadChecker.requestAvatarId} should return the username in the
+        case the pad is valid.
+        """
+        PAD = 'test_requestAvatarId'
+        USERNAME = 'test_requestAvatarId username'
+        checker = OneTimePadChecker({PAD: USERNAME})
+        self.assertEqual(
+            checker.requestAvatarId(_AMPOneTimePad(PAD)), USERNAME)
+
+
+    def test_requestAvatarIdUnauthorized(self):
+        """
+        L{OneTimePadChecker.requestAvatarId} should throw L{UnauthorizedLogin}
+        if an unknown pad is given.
+        """
+        checker = OneTimePadChecker({})
+        self.assertRaises(
+            UnauthorizedLogin,
+            lambda: checker.requestAvatarId(_AMPOneTimePad(None)))
+
+
+    def test_oneTimePad(self):
+        """
+        L{OneTimePadChecker.requestAvatarId} should invalidate the pad if a
+        login is successful.
+        """
+        PAD = 'test_requestAvatarId'
+        checker = OneTimePadChecker({PAD: 'username'})
+        checker.requestAvatarId(_AMPOneTimePad(PAD))
+        self.assertRaises(
+            UnauthorizedLogin,
+            lambda: checker.requestAvatarId(_AMPOneTimePad(PAD)))
