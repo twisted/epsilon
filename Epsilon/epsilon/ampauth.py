@@ -13,9 +13,11 @@ from zope.interface import implements
 from twisted.python.randbytes import secureRandom
 from twisted.cred.error import UnauthorizedLogin
 from twisted.cred.credentials import IUsernameHashedPassword, IUsernamePassword
+from twisted.cred.checkers import ICredentialsChecker
 from twisted.protocols.amp import IBoxReceiver, String, Command, AMP
 from twisted.internet.protocol import ServerFactory
 
+from epsilon.iepsilon import IOneTimePad
 from epsilon.structlike import record
 
 __metaclass__ = type
@@ -29,6 +31,21 @@ class UnhandledCredentials(Exception):
 
 
 
+class OTPLogin(Command):
+    """
+    Command to initiate a login attempt where a one-time pad is to be used in
+    place of username/password credentials.
+    """
+    arguments = [('pad', String())]
+
+    errors = {
+        # Invalid username or password
+        UnauthorizedLogin: 'UNAUTHORIZED_LOGIN',
+        # No IBoxReceiver avatar
+        NotImplementedError: 'NOT_IMPLEMENTED_ERROR'}
+
+
+
 class PasswordLogin(Command):
     """
     Command to initiate a username/password-based login attempt.  The response
@@ -37,7 +54,6 @@ class PasswordLogin(Command):
     """
     arguments = [('username', String())]
     response = [('challenge', String())]
-
 
 
 
@@ -123,6 +139,17 @@ class _AMPUsernamePassword(record('username challenge nonce response')):
 
 
 
+class _AMPOneTimePad(record('padValue')):
+    """
+    L{IOneTimePad} implementation used by L{OTPLogin}.
+
+    @ivar padValue: The value of the one-time pad.
+    @type padValue: C{str}
+    """
+    implements(IOneTimePad)
+
+
+
 class CredReceiver(AMP):
     """
     Integration between AMP and L{twisted.cred}.
@@ -161,13 +188,10 @@ class CredReceiver(AMP):
         return {'challenge': self.challenge}
 
 
-    @PasswordChallengeResponse.responder
-    def passwordChallengeResponse(self, cnonce, response):
+    def _login(self, credentials):
         """
-        Verify the response to a challenge.
+        Actually login to our portal with the given credentials.
         """
-        credentials = _AMPUsernamePassword(
-            self.username, self.challenge, cnonce, response)
         d = self.portal.login(credentials, None, IBoxReceiver)
         def cbLoggedIn((interface, avatar, logout)):
             self.logout = logout
@@ -178,6 +202,23 @@ class CredReceiver(AMP):
         return d
 
 
+    @PasswordChallengeResponse.responder
+    def passwordChallengeResponse(self, cnonce, response):
+        """
+        Verify the response to a challenge.
+        """
+        return self._login(_AMPUsernamePassword(
+            self.username, self.challenge, cnonce, response))
+
+
+    @OTPLogin.responder
+    def otpLogin(self, pad):
+        """
+        Verify the given pad.
+        """
+        return self._login(_AMPOneTimePad(pad))
+
+
     def connectionLost(self, reason):
         """
         If a login has happened, perform a logout.
@@ -186,6 +227,25 @@ class CredReceiver(AMP):
         if self.logout is not None:
             self.logout()
             self.boxReceiver = self.logout = None
+
+
+
+class OneTimePadChecker(record('pads')):
+    """
+    Checker which validates one-time pads.
+
+    @ivar pads: Mapping between valid one-time pads and avatar IDs.
+    @type pads: C{dict}
+    """
+    implements(ICredentialsChecker)
+
+    credentialInterfaces = (IOneTimePad,)
+
+    # ICredentialsChecker
+    def requestAvatarId(self, credentials):
+        if credentials.padValue in self.pads:
+            return self.pads.pop(credentials.padValue)
+        raise UnauthorizedLogin('Unknown one-time pad')
 
 
 
@@ -244,6 +304,8 @@ def login(client, credentials):
 
 __all__ = [
     'UnhandledCredentials',
+
+    'OTPLogin', 'OneTimePadChecker',
 
     'PasswordLogin', 'PasswordChallengeResponse', 'CredReceiver',
 
