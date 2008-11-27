@@ -90,5 +90,26 @@
       client is the use of <code>login</code> after a connection has been set
       up but before any commands are issued.
     </p>
+
+    <h2>One-Time Pad Authentication</h2>
+
+    <p>
+      <code class="API">epsilon.ampauth</code> includes an <code class="API"
+        base="twisted.cred.checkers">CredentialsChecker</code> for validating
+      one-time pads: <code class="API"
+        base="epsilon.ampauth">OneTimePadChecker</code>.  If this checker is
+      registered with the portal, clients may use the <code class="API"
+        base="epsilon.ampauth">OTPLogin</code> command to authenticate.
+    </p>
+
+    <a href="listings/amp/amp_auth_server.py" class="py-listing">
+      AMP server with OTP authentication
+    </a>
+
+    <p></p>
+
+    <a href="listings/amp/amp_auth_client.py" class="py-listing">
+      OTP-authenticating AMP client
+    </a>
   </body>
 </html>
