@@ -428,3 +428,19 @@ class OneTimePadCheckerTests(TestCase):
         self.assertRaises(
             UnauthorizedLogin,
             lambda: checker.requestAvatarId(_AMPOneTimePad(PAD)))
+
+
+
+class AMPOneTimePadTests(TestCase):
+    """
+    Tests for L{_AMPOneTimePad}.
+    """
+    def test_checkPad(self):
+        """
+        L{_AMPOneTimePad.checkPad} should only return C{True} if its pad is in
+        the set of known pads.
+        """
+        otp = _AMPOneTimePad('test_checkPad')
+        self.assertFalse(otp.checkPad({}))
+        self.assertFalse(otp.checkPad({'AMPOneTimePadTests': 1}))
+        self.assertTrue(otp.checkPad({'test_checkPad': 1}))
