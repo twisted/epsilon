@@ -148,6 +148,10 @@ class _AMPOneTimePad(record('padValue')):
     """
     implements(IOneTimePad)
 
+    # IOneTimePad
+    def checkPad(self, pads):
+        return self.padValue in pads
+
 
 
 class CredReceiver(AMP):
@@ -243,7 +247,7 @@ class OneTimePadChecker(record('pads')):
 
     # ICredentialsChecker
     def requestAvatarId(self, credentials):
-        if credentials.padValue in self.pads:
+        if credentials.checkPad(self.pads):
             return self.pads.pop(credentials.padValue)
         raise UnauthorizedLogin('Unknown one-time pad')
 
