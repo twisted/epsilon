@@ -1,3 +1,6 @@
+0.5.12 (2008-12-09):
+  - Added support for AMP authentication via one-time pads.
+
 0.5.11 (2008-10-02):
   - epsilon.amprouter added, providing support for multiplexing
     unrelated AMP communications over the same connection.
@@ -7,7 +10,6 @@
     wrappers.
   - Better repr() for epsilon.structlike.record added.
   - epsilon.juice now uses twisted.internet.ssl instead of epsilon.sslverify.
-  - 
 
 0.5.9 (2008-01-18):
 
