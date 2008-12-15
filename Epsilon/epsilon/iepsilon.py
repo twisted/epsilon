@@ -19,8 +19,11 @@ class IOneTimePad(ICredentials):
         match, login will be successful and this pad will be invalidated
         (further attempts to use it will fail).
 
-        @param pads: Container of all valid C{str} one-time pads.
+        @param pads: Mapping between all valid C{str} one-time pads and their
+            C{str} avatar IDs.
         @type pads: C{dict}
 
-        @rtype: C{bool}
+        @return: This pad's value in C{pads}, or C{None} if the pad is not
+            valid.
+        @rtype: C{str} or C{NoneType}
         """

@@ -150,7 +150,7 @@ class _AMPOneTimePad(record('padValue')):
 
     # IOneTimePad
     def checkPad(self, pads):
-        return self.padValue in pads
+        return pads.pop(self.padValue, None)
 
 
 
@@ -247,9 +247,10 @@ class OneTimePadChecker(record('pads')):
 
     # ICredentialsChecker
     def requestAvatarId(self, credentials):
-        if credentials.checkPad(self.pads):
-            return self.pads.pop(credentials.padValue)
-        raise UnauthorizedLogin('Unknown one-time pad')
+        avatarID = credentials.checkPad(self.pads)
+        if avatarID is None:
+            raise UnauthorizedLogin('Unknown one-time pad')
+        return avatarID
 
 
 
