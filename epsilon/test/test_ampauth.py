@@ -419,8 +419,8 @@ class OneTimePadCheckerTests(TestCase):
 
     def test_oneTimePad(self):
         """
-        L{OneTimePadChecker.requestAvatarId} should invalidate the pad if a
-        login is successful.
+        L{OneTimePadChecker.requestAvatarId} should raise L{UnauthorizedLogin}
+        if a pad is used twice.
         """
         PAD = 'test_requestAvatarId'
         checker = OneTimePadChecker({PAD: 'username'})
@@ -440,7 +440,24 @@ class AMPOneTimePadTests(TestCase):
         L{_AMPOneTimePad.checkPad} should only return C{True} if its pad is in
         the set of known pads.
         """
-        otp = _AMPOneTimePad('test_checkPad')
-        self.assertFalse(otp.checkPad({}))
-        self.assertFalse(otp.checkPad({'AMPOneTimePadTests': 1}))
-        self.assertTrue(otp.checkPad({'test_checkPad': 1}))
+        PAD_VALUE = 'test_checkPad'
+        AVATAR_ID = 'AMPOneTimePadTests'
+        otp = _AMPOneTimePad(PAD_VALUE)
+        self.assertIdentical(otp.checkPad({}), None)
+        self.assertIdentical(
+            otp.checkPad({'AMPOneTimePadTests': AVATAR_ID}), None)
+        self.assertEqual(
+            otp.checkPad({PAD_VALUE: AVATAR_ID}), AVATAR_ID)
+
+
+    def test_invalidesPad(self):
+        """
+        L{_AMPOneTimePad.checkPad} should remove a valid pad from the pad
+        mapping.
+        """
+        PAD_VALUE = 'test_invalidesPad'
+        AVATAR_ID = 'AMPOneTimePadTests'
+        otp = _AMPOneTimePad(PAD_VALUE)
+        pads = {PAD_VALUE: AVATAR_ID}
+        self.assertEqual(otp.checkPad(pads), AVATAR_ID)
+        self.assertIdentical(otp.checkPad(pads), None)
