@@ -71,10 +71,10 @@ def require(packageName, fixName):
     elif (packageName, fixName) == ("twisted", "loopbackasync_reentrancy"):
         # This one is really hard to detect reasonably.  Invoking the code
         # involves triggering the reactor, which it would be good to avoid. 
-        # Just install it, but we should get rid of this as soon as 8.1 is
-        # no longer supported and 8.2 is required. -exarkun
-        from epsilon.hotfixes import loopbackasync_reentrancy
-        loopbackasync_reentrancy.install()
+        from twisted import version
+        if (version.major, version.minor) < (8, 2):
+            from epsilon.hotfixes import loopbackasync_reentrancy
+            loopbackasync_reentrancy.install()
     else:
         raise NoSuchHotfix(packageName, fixName)
 
