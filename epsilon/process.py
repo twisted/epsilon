@@ -1,8 +1,20 @@
 # -*- test-case-name: epsilon.test.test_process -*-
+# Copyright (c) 2008 Divmod.  See LICENSE for details.
+
+"""
+Process and stdio related functionality.
+"""
 
 import os, sys, imp, sets
 
+from zope.interface import implements
+
 from twisted.internet import reactor
+from twisted.application.service import IService, Service
+from twisted.internet.stdio import StandardIO
+
+from epsilon.structlike import record
+
 
 def spawnProcess(processProtocol, executable, args=(), env={},
                  path=None, uid=None, gid=None, usePTY=0,
@@ -41,3 +53,15 @@ def spawnPythonProcess(processProtocol, args=(), env={},
     return spawnProcess(processProtocol, sys.executable,
                         args, env, path, uid, gid, usePTY,
                         packages)
+
+
+
+class StandardIOService(record('protocol'), Service):
+    """
+    Service for connecting a protocol to stdio.
+    """
+    def startService(self):
+        """
+        Connect C{self.protocol} to standard io.
+        """
+        StandardIO(self.protocol)
