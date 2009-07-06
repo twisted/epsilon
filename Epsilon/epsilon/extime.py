@@ -814,14 +814,15 @@ class Time(object):
     #
 
     def getBounds(self, tzinfo=None):
-        """Return a pair describing the bounds of self.
+        """
+        Return a pair describing the bounds of self.
 
         This returns a pair (min, max) of Time instances. It is not quite the
         same as (self, self + self.resolution). This is because timezones are
         insignificant for instances with a resolution greater or equal to 1
         day.
 
-        To illustrate the problem, consider a Time instance:
+        To illustrate the problem, consider a Time instance::
 
             T = Time.fromHumanly('today', tzinfo=anything)
 
