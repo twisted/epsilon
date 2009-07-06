@@ -77,7 +77,7 @@ class JuiceBox(dict):
     def sendTo(self, proto):
         """
         Serialize and send this box to a Juice instance.  By the time it is
-        being sent, several keys are required.  I must have exactly ONE of:
+        being sent, several keys are required.  I must have exactly ONE of::
 
             -ask
             -answer

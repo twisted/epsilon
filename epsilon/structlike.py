@@ -116,7 +116,7 @@ class StructBehavior(object):
 
 def record(*a, **kw):
     """
-    Are you tired of typing class declarations that look like this?
+    Are you tired of typing class declarations that look like this::
 
         class StuffInfo:
             def __init__(self, a=None, b=None, c=None, d=None, e=None,
@@ -135,7 +135,7 @@ def record(*a, **kw):
                            f=None, g=None, h=None, i=None, j=None)
 
     if the arguments are required, rather than having defaults, it could be
-    even shorter:
+    even shorter::
 
         StuffInfo = record('a b c d e f g h i j')
 
