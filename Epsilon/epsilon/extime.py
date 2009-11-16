@@ -12,6 +12,14 @@ from email.Utils import parsedate_tz
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
 
+
+class InvalidPrecision(Exception):
+    """
+    L{Time.asHumanly} was passed an invalid precision value.
+    """
+
+
+
 def sanitizeStructTime(struct):
     """
     Convert struct_time tuples with possibly invalid values to valid
@@ -153,6 +161,16 @@ class Time(object):
     # the instance variable _time is the internal representation of time. It
     # is a naive datetime object which is always UTC. A UTC tzinfo would be
     # great, if one existed, and anyway it complicates pickling.
+
+
+    class Precision(object):
+        MINUTES = object() 
+        SECONDS = object()
+
+
+    _timeFormat = {
+            Precision.MINUTES: '%I:%M %p',
+            Precision.SECONDS: '%I:%M:%S %p'}
 
     rfc2822Weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -778,7 +796,7 @@ class Time(object):
         else:
             return dtime.timetuple()
 
-    def asHumanly(self, tzinfo=None, now=None):
+    def asHumanly(self, tzinfo=None, now=None, precision=Precision.MINUTES):
         """Return this time as a short string, tailored to the current time.
 
         Parts of the date that can be assumed are omitted. Consequently, the
@@ -788,7 +806,20 @@ class Time(object):
         By default, the current time is determined by the system clock. The
         current time used for formatting the time can be changed by providing a
         Time instance as the parameter 'now'.
+
+        @param precision: The smallest unit of time that will be represented
+        in the returned string.  Valid values are L{Time.Precision.MINUTES} and
+        L{Time.Precision.SECONDS}.
+
+        @raise InvalidPrecision: if the specified precision is not either
+        L{Time.Precision.MINUTES} or L{Time.Precision.SECONDS}.
         """
+        try:
+            timeFormat = Time._timeFormat[precision]
+        except KeyError:
+            raise InvalidPrecision(
+                    'Use Time.Precision.MINUTES or Time.Precision.SECONDS')
+
         if now is None:
             now = Time().asDatetime(tzinfo)
         else:
@@ -799,14 +830,14 @@ class Time(object):
         if dtime.date() == now.date():
             if self.isAllDay():
                 return 'all day'
-            return dtime.strftime('%I:%M %p').lower()
+            return dtime.strftime(timeFormat).lower()
         else:
             res = str(dtime.date().day) + dtime.strftime(' %b')  # day + month
             # Different year?
             if not dtime.date().year == now.date().year:
                 res += dtime.strftime(' %Y')
             if not self.isAllDay():
-                res += dtime.strftime(', %I:%M %p').lower()
+                res += dtime.strftime(', %s' % (timeFormat,)).lower()
             return res
 
     #
