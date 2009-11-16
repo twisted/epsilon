@@ -409,6 +409,36 @@ class TestTime(unittest.TestCase):
         allDay = extime.Time.fromISO8601TimeAndDate('2005-123')
         allDayNextYear = extime.Time.fromISO8601TimeAndDate('2006-123')
         self.assertEquals(allDay.asHumanly(now=allDayNextYear), '3 May 2005')
+    
+    
+    def test_asHumanlyValidPrecision(self):
+        """
+        L{Time.asHumanly} should return the time in minutes by default, and
+        in the specified precision when the precision parameter is given.
+        The precision behavior should be identical for both same day and
+        different day code paths.
+        """
+        sameDay = extime.Time.fromStructTime((2004, 12, 6, 14, 15, 16, 0, 0, 0))
+        nextDay = extime.Time.fromStructTime((2004, 12, 7, 14, 15, 16, 0, 0, 0))
+        self.assertEquals(self._createReference().asHumanly(now=sameDay),
+                '02:15 pm' )
+        self.assertEquals(self._createReference().asHumanly(now=sameDay,
+                precision=extime.Time.Precision.SECONDS), '02:15:16 pm' )
+        self.assertEquals(self._createReference().asHumanly(now=nextDay),
+                '6 Dec, 02:15 pm' )
+        self.assertEquals(self._createReference().asHumanly(now=nextDay,
+                precision=extime.Time.Precision.SECONDS), '6 Dec, 02:15:16 pm' )
+
+
+    def test_asHumanlyInvalidPrecision(self):
+        """
+        L{Time.asHumanly} should raise an L{InvalidPrecision} exception if
+        passed a value for precision other than L{Time.Precision.MINUTES} or
+        L{Time.Precision.SECONDS}.
+        """
+        self.assertRaises(extime.InvalidPrecision,
+                          extime.Time().asHumanly,
+                          **{'precision': '%H:%M'})
 
 
     def test_inverse(self):
