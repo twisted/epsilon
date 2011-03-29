@@ -4,9 +4,9 @@ from epsilon import version, setuphelper
 setuphelper.autosetup(
     name="Epsilon",
     version=version.short(),
-    maintainer="Divmod, Inc.",
-    maintainer_email="support@divmod.org",
-    url="http://divmod.org/trac/wiki/DivmodEpsilon",
+    maintainer="divmod-dev",
+    maintainer_email="divmod-dev@lists.launchpad.net",
+    url="https://launchpad.net/divmod.org",
     license="MIT",
     platforms=["any"],
     description="A set of utility modules used by Divmod projects",
