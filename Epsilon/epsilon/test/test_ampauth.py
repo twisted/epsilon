@@ -7,7 +7,7 @@ Tests for L{epsilon.ampauth}.
 import epsilon.hotfix
 epsilon.hotfix.require('twisted', 'loopbackasync_reentrancy')
 
-from sha import sha
+from hashlib import sha1
 
 from zope.interface import implements
 from zope.interface.verify import verifyObject
@@ -186,7 +186,7 @@ class CredReceiverTests(TestCase):
         challenge = self.server.passwordLogin(self.username)['challenge']
         cnonce = '123abc'
         cleartext = '%s %s %s' % (challenge, cnonce, self.password)
-        response = sha(cleartext).digest()
+        response = sha1(cleartext).digest()
         d = self.server.passwordChallengeResponse(cnonce, response)
         def cbLoggedIn(result):
             self.assertEqual(result, {})

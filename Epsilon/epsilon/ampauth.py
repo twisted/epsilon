@@ -6,7 +6,7 @@ This module provides integration between L{AMP<twisted.protocols.amp.AMP>} and
 L{cred<twisted.cred>}.
 """
 
-from sha import sha
+from hashlib import sha1
 
 from zope.interface import implements
 
@@ -76,7 +76,7 @@ def _calcResponse(challenge, nonce, password):
     @rtype: C{str}
     @return: A hash constructed from the three parameters.
     """
-    return sha('%s %s %s' % (challenge, nonce, password)).digest()
+    return sha1('%s %s %s' % (challenge, nonce, password)).digest()
 
 
 
