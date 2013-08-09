@@ -68,15 +68,19 @@ class TestTime(unittest.TestCase):
         self.assertEquals(dtime.hour, 23)
         self.assertEquals(dtime.minute, 12)
 
+
     def test_cmp(self):
         now = time.gmtime()
         self.assertEquals(extime.Time.fromStructTime(now), extime.Time.fromStructTime(now))
-        self.assertNotEquals(extime.Time.fromStructTime(now), extime.Time.fromStructTime(time.localtime()))
+        self.assertNotEqual(
+            extime.Time.fromStructTime(now),
+            extime.Time.fromStructTime(now) + datetime.timedelta(seconds=42))
         self.assertNotEquals(extime.Time.fromStructTime(now), 13)
 
         aTime = extime.Time.fromStructTime(now)
         for op in 'lt', 'le', 'gt', 'ge':
             self.assertRaises(TypeError, getattr(operator, op), aTime, now)
+
 
     def test_fromNow(self):
         diff = datetime.datetime.utcnow() - extime.Time()._time
@@ -409,8 +413,8 @@ class TestTime(unittest.TestCase):
         allDay = extime.Time.fromISO8601TimeAndDate('2005-123')
         allDayNextYear = extime.Time.fromISO8601TimeAndDate('2006-123')
         self.assertEquals(allDay.asHumanly(now=allDayNextYear), '3 May 2005')
-    
-    
+
+
     def test_asHumanlyValidPrecision(self):
         """
         L{Time.asHumanly} should return the time in minutes by default, and
