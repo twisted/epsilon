@@ -258,7 +258,7 @@ class CaselessTestCase(TestCase):
         def assertNotFound(a, b, rest=()):
             self.assertEquals(a.find(b, *rest), -1)
             err = self.assertRaises(ValueError, lambda: a.index(b, *rest))
-            self.assertEquals(str(err), 'substring not found')
+            self.assertSubstring('substring not found', str(err))
 
         for a in map(Caseless, self._casings(u'abcbabcba')):
             assertNotFound(a, u'foo')
@@ -278,7 +278,7 @@ class CaselessTestCase(TestCase):
         def assertNotFound(a, b, rest=()):
             self.assertEquals(a.rfind(b, *rest), -1)
             err = self.assertRaises(ValueError, lambda: a.rindex(b, *rest))
-            self.assertEquals(str(err), 'substring not found')
+            self.assertSubstring('substring not found', str(err))
 
         for a in map(Caseless, self._casings(u'abcbabcba')):
             assertNotFound(a, u'foo')
