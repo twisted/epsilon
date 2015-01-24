@@ -19,7 +19,7 @@ setup(
         "PyOpenSSL>=0.13"
     ],
     packages=find_packages(),
-    scripts=['bin/benchmark'],
+    scripts=['bin/benchmark', 'bin/certcreate'],
 
     license="MIT",
     platforms=["any"],
