@@ -8,7 +8,7 @@ See the class 'Time' for details.
 import datetime
 import re
 
-from email.Utils import parsedate_tz
+from email.Utils import formatdate, parsedate_tz
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -726,6 +726,16 @@ class Time(object):
             rfcoffset)
 
         return rfcstring
+
+    def asRFC1123(self):
+        """
+        Return the time formatted as specified in RFC 1123.
+
+        Useful when setting the max-age value of an HTTP cookie, which
+        requires the timezone be represented as the string 'GMT',
+        rather than an offset, e.g., '-0000'
+        """
+        return formatdate(self.asPOSIXTimestamp(), False, True)
 
     def asISO8601TimeAndDate(self, includeDelimiters=True, tzinfo=None,
                              includeTimezone=True):
