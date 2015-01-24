@@ -23,3 +23,8 @@ after_success:
 
 notifications:
   email: false
+  irc:
+     channels: "chat.freenode.net#divmod"
+     template:
+       - "%{repository}@%{branch} - %{author}: %{message} (%{build_url})"
+     use_notice: true
