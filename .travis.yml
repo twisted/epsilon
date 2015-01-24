@@ -15,9 +15,8 @@ install:
   - pip install .
 
 script:
-  - |
-    coverage run --branch --source=epsilon $(type -p trial) epsilon
-    coverage report -m
+  - coverage run --branch --source=epsilon $(type -p trial) epsilon
+  - coverage report -m
 
 after_success:
   - coveralls
