@@ -14,7 +14,20 @@ from epsilon.scripts import benchmark
 from epsilon import juice
 
 
+try:
+    filepath.FilePath('/proc/diskstats').open().close()
+except IOError:
+    hasDiskstats = False
+else:
+    hasDiskstats = True
+
+
+
 class DiskstatTestCase(unittest.TestCase):
+    if not hasDiskstats:
+        skip = 'epsilon.benchmark requires access to /proc/diskstats'
+
+
     def testDiskLineParser(self):
         """
         Test the parsing of a single line into a single diststat instance.
@@ -393,6 +406,10 @@ class BasicProcessTestCase(SpawnMixin, unittest.TestCase):
 
 
 class SnapshotTestCase(unittest.TestCase):
+    if not hasDiskstats:
+        skip = 'epsilon.benchmark requires access to /proc/diskstats'
+
+
     def testStart(self):
         c = benchmark.Change()
         c.start(filepath.FilePath('.'), 'hda', 'hda1')
@@ -407,6 +424,9 @@ class SnapshotTestCase(unittest.TestCase):
 
 
 class BenchmarkProcessTestCase(SpawnMixin, unittest.TestCase):
+    if not hasDiskstats:
+        skip = 'epsilon.benchmark requires access to /proc/diskstats'
+
 
     processProtocol = benchmark.BenchmarkProcess
 

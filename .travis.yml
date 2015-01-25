@@ -1,0 +1,30 @@
+language: "python"
+
+branches:
+  only:
+    - master
+
+matrix:
+  include:
+    - python: "pypy"
+    - python: "2.7"
+
+install:
+  # Tools for checking coverage and uploading to coveralls
+  - pip install coveralls coverage
+  - pip install .
+
+script:
+  - coverage run --branch --source=epsilon $(type -p trial) epsilon
+  - coverage report -m
+
+after_success:
+  - coveralls
+
+notifications:
+  email: false
+  irc:
+     channels: "chat.freenode.net#divmod"
+     template:
+       - "%{repository}@%{branch} - %{author}: %{message} (%{build_url})"
+     use_notice: true
