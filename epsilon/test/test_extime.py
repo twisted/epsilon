@@ -306,7 +306,7 @@ class TestTime(unittest.TestCase):
     def test_asRFC1123(self):
         self.assertEquals(
             self._createReference().asRFC1123(),
-            'Mon, 6 Dec 2004 14:15:16 GMT'
+            'Mon, 06 Dec 2004 14:15:16 GMT'
         )
 
     def test_asRFC2822(self):
