@@ -727,6 +727,7 @@ class Time(object):
 
         return rfcstring
 
+
     def asRFC1123(self):
         """
         Return the time formatted as specified in RFC 1123.
@@ -736,6 +737,7 @@ class Time(object):
         rather than an offset, e.g., '-0000'
         """
         return formatdate(self.asPOSIXTimestamp(), False, True)
+
 
     def asISO8601TimeAndDate(self, includeDelimiters=True, tzinfo=None,
                              includeTimezone=True):
