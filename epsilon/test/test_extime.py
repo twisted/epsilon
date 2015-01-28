@@ -303,6 +303,12 @@ class TestTime(unittest.TestCase):
     def test_asPOSIXTimestamp(self):
         self.assertEquals( self._createReference().asPOSIXTimestamp(), 1102342516 )
 
+    def test_asRFC1123(self):
+        self.assertEquals(
+            self._createReference().asRFC1123(),
+            'Mon, 6 Dec 2004 14:15:16 GMT'
+        )
+
     def test_asRFC2822(self):
         self.assertEquals( self._createReference().asRFC2822(), 'Mon, 6 Dec 2004 14:15:16 -0000' )
         self.assertEquals( self._createReference().asRFC2822(self.MST()), 'Mon, 6 Dec 2004 07:15:16 -0700' )
