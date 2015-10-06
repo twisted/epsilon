@@ -10,6 +10,5 @@ def asTwistedVersion(packageName, versionString):
         packageName, *map(int, versionString.split('+', 1)[0].split(".")))
 
 version = asTwistedVersion("epsilon", __version__)
-del versions
 
 __all__ = ['__version__', 'version']
