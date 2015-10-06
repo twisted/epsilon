@@ -7,9 +7,7 @@ setup(
     name="Epsilon",
     description="A set of utility modules used by Divmod projects",
 
-    maintainer="divmod-dev",
-    maintainer_email="divmod-dev@lists.launchpad.net",
-    url="https://launchpad.net/divmod.org",
+    url="https://github.org/twisted/epsilon",
 
     install_requires=[
         "Twisted>=13.2.0",
