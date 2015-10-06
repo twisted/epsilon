@@ -7,7 +7,7 @@ setup(
     name="Epsilon",
     description="A set of utility modules used by Divmod projects",
 
-    url="https://github.org/twisted/epsilon",
+    url="https://github.com/twisted/epsilon",
 
     install_requires=[
         "Twisted>=13.2.0",
