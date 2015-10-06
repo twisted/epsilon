@@ -423,7 +423,7 @@ def discoverCurrentWorkingDevice():
     """
     possibilities = []
     cwd = os.getcwd()
-    for L in file('/etc/mtab'):
+    for L in file('/proc/self/mounts'):
         parts = L.split()
         if cwd.startswith(parts[1]):
             possibilities.append((len(parts[1]), parts[0]))
