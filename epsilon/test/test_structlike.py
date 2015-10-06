@@ -5,10 +5,12 @@ Tests for L{epsilon.structlike}.
 
 import threading
 
-from twisted.trial import unittest
-from twisted.internet.threads import deferToThread
-from twisted.internet.defer import gatherResults
 from epsilon.structlike import record
+from twisted.internet import reactor
+from twisted.internet.defer import gatherResults
+from twisted.internet.threads import deferToThreadPool
+from twisted.python.threadpool import ThreadPool
+from twisted.trial import unittest
 
 
 class MyRecord(record('something somethingElse')):
@@ -144,6 +146,10 @@ class StructLike(unittest.TestCase):
         look the same (i.e. the repr state tracking for '...' should be
         thread-local).
         """
+        pool = ThreadPool(2, 2)
+        pool.start()
+        self.addCleanup(pool.stop)
+
         class StickyRepr(object):
             """
             This has a __repr__ which will block until a separate thread
@@ -161,7 +167,7 @@ class StructLike(unittest.TestCase):
                 return 'sticky'
         r = StickyRepr()
         mr = MyRecord(something=1, somethingElse=r)
-        d = deferToThread(repr, mr)
+        d = deferToThreadPool(reactor, pool, repr, mr)
         def otherRepr():
             # First we wait for the first thread doing a repr() to enter its
             # __repr__()...
@@ -174,7 +180,7 @@ class StructLike(unittest.TestCase):
             # Now we're done, wake up the other repr and let it complete.
             r.wait.set()
             return result
-        d2 = deferToThread(otherRepr)
+        d2 = deferToThreadPool(reactor, pool, otherRepr)
 
         def done((thread1repr, thread2repr)):
             knownGood = 'MyRecord(something=1, somethingElse=sticky)'
@@ -182,5 +188,3 @@ class StructLike(unittest.TestCase):
             self.assertEquals(thread1repr, knownGood)
             self.assertEquals(thread2repr, knownGood)
         return gatherResults([d, d2]).addCallback(done)
-
-

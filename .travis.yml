@@ -1,3 +1,5 @@
+sudo: false
+
 language: "python"
 
 branches:
@@ -12,7 +14,7 @@ matrix:
 install:
   # Tools for checking coverage and uploading to coveralls
   - pip install coveralls coverage
-  - pip install .
+  - pip install "cryptography<1.0.0" .
 
 script:
   - coverage run --branch --source=epsilon $(type -p trial) epsilon
