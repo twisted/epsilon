@@ -1,13 +1,10 @@
+import versioneer
 from setuptools import setup, find_packages
-import re
-
-versionPattern = re.compile(r"""^__version__ = ['"](.*?)['"]$""", re.M)
-with open("epsilon/_version.py", "rt") as f:
-    version = versionPattern.search(f.read()).group(1)
 
 setup(
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     name="Epsilon",
-    version=version,
     description="A set of utility modules used by Divmod projects",
 
     maintainer="divmod-dev",
