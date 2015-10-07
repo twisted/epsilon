@@ -12,6 +12,8 @@ matrix:
     - python: "2.7"
 
 install:
+  # Upgrade packaging tools first
+  - pip install -U pip setuptools wheel
   # Tools for checking coverage and uploading to coveralls
   - pip install coveralls coverage
   - pip install "cryptography<1.0.0" .
