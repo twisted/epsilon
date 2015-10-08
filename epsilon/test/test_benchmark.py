@@ -16,16 +16,17 @@ from epsilon import juice
 
 try:
     filepath.FilePath('/proc/diskstats').open().close()
+    filepath.FilePath('/proc/self/mounts').open().close()
 except IOError:
-    hasDiskstats = False
+    hasProc = False
 else:
-    hasDiskstats = True
+    hasProc = True
 
 
 
 class DiskstatTestCase(unittest.TestCase):
-    if not hasDiskstats:
-        skip = 'epsilon.benchmark requires access to /proc/diskstats'
+    if not hasProc:
+        skip = 'epsilon.benchmark requires access to /proc'
 
 
     def testDiskLineParser(self):
@@ -406,8 +407,8 @@ class BasicProcessTestCase(SpawnMixin, unittest.TestCase):
 
 
 class SnapshotTestCase(unittest.TestCase):
-    if not hasDiskstats:
-        skip = 'epsilon.benchmark requires access to /proc/diskstats'
+    if not hasProc:
+        skip = 'epsilon.benchmark requires access to /proc'
 
 
     def testStart(self):
@@ -424,8 +425,8 @@ class SnapshotTestCase(unittest.TestCase):
 
 
 class BenchmarkProcessTestCase(SpawnMixin, unittest.TestCase):
-    if not hasDiskstats:
-        skip = 'epsilon.benchmark requires access to /proc/diskstats'
+    if not hasProc:
+        skip = 'epsilon.benchmark requires access to /proc'
 
 
     processProtocol = benchmark.BenchmarkProcess
