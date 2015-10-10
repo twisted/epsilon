@@ -8,21 +8,21 @@
 
   - ``epsilon.benchmark`` now uses ``/proc/self/mounts`` instead of relying on
     ``/etc/mtab`` which is often wrong, or does not even exist.
-  - Fixed a test that interacted badly with Twisted 15.4.0.
-  - Updated the metadata in setup.py.
+  - Fixed a test that interacted badly with *Twisted* 15.4.0.
+  - Updated the metadata in *setup.py*.
 
 0.7.0 (2014-01-15):
   Major:
 
-  - Only Python 2.6 and 2.7 are supported now. 2.4, 2.5 is deprecated.
+  - Only *Python* 2.6 and 2.7 are supported now. 2.4, 2.5 is deprecated.
   - setup.py now uses setuptools, and stores its dependencies. This
     means you no longer need to manually install dependencies.
-  - *setup.py* no longer requires Twisted for egg_info, making it easier
+  - *setup.py* no longer requires *Twisted* for *egg_info*, making it easier
     to install Epsilon using pip.
-  - Significant improvements to PyPy support. PyPy is now a supported
+  - Significant improvements to *PyPy* support. *PyPy* is now a supported
     platform, with CI support.
   - ``epsilon.release`` is now removed. It relied on a bunch of machinery
-    specific to divmod that no longer existed.
+    specific to *Divmod* that no longer existed.
   - ``epsilon.sslverify`` is now removed. Use ``twisted.internet.ssl`` instead.
   - ``epsilon.asTwistedVersion`` takes a string version (``"1.2.3"``) and
     turns it into a ``twisted.python.versions.Version``.
@@ -32,20 +32,20 @@
   - Several deprecation warnings have been cleaned up.
 
 0.6.0 (2009-11-25):
-  - Disable loopback hotfix on Twisted 8.2 and newer.
-  - Remove the implementation of Cooperator and use Twisted's implementation
-    instead.
-  - Use Twisted's deferLater implementation.
-  - Add a service for communicating via stdio.
+  - Disable loopback hotfix on *Twisted* 8.2 and newer.
+  - Remove the implementation of ``Cooperator`` and use *Twisted*'s
+    implementation instead.
+  - Use *Twisted*'s ``deferLater`` implementation.
+  - Add a service for communicating via *stdio*.
   - Add a ``precision`` argument to ``Time.asHumanly`` to control the precision
     of the returned string.
 
 0.5.12 (2008-12-09):
-  - Added support for AMP authentication via one-time pads.
+  - Added support for *AMP* authentication via one-time pads.
 
 0.5.11 (2008-10-02):
   - ``epsilon.amprouter`` added, providing support for multiplexing
-    unrelated AMP communications over the same connection.
+    unrelated *AMP* communications over the same connection.
 
 0.5.10 (2008-08-12):
   - Added the ``epsilon.caseless`` module, with case-insensitive string
