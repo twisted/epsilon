@@ -3,6 +3,8 @@
 
   - *certcreate* should now be installed properly.
   - An ``asRFC1123`` method was added to ``extime.Time``.
+  - As *Twisted* is dropping Python 2.6, Epsilon will also not support 2.6 from
+    the next release.
 
   Minor:
 
@@ -89,24 +91,24 @@
   - Replaced ``'%y'`` with ``'%Y'`` in ``Time.asHumanly`` output - the year is
     now four digits, rather than two.
   - Added new ``epsilon.structlike`` functionality for simple record.
-  - All uses of defer.wait and deferredResult were removed from the tests.
+  - All uses of ``defer.wait`` and ``deferredResult`` were removed from the tests.
   - Added ``epsilon.juice``, an asynchronous messaging protocol slated for
     inclusion in *Twisted*.  Improved a few features, such as the ``repr`` of
-    JuiceBox instances.  This was moved from *Vertex*.
+    ``JuiceBox`` instances.  This was moved from *Vertex*.
   - Added ``epsilon.sslverify``, a set of utilities for dealing with
     *PyOpenSSL* using simple high-level objects, performing operations such as
     signing and verifying certificates. This was also moved from *Vertex*, and
     slated for inclusion in *Twisted*.
   - Added ``epsilon.spewer``, a prettier version of the spewer in
     ``twisted.python.util``.
-  - Added "benchmark" tool for measuring and reporting run-times of python
+  - Added *benchmark* tool for measuring and reporting run-times of python
     programs.
 
 0.4.0 (2005-12-20):
   - Disabled crazy ``sys.modules`` hackery in ``test_setuphelper``.
   - Added module for creating a directory structure from a string template.
   - Added support for *now* to ``Time.fromHumanly``.
-  - Added a structured "hotfix" system to abstract and formalize monkey
+  - Added a structured *hotfix* system to abstract and formalize monkey
     patches and version testing logic away from code which requires it.
 
 0.3.2 (2005-11-05):
@@ -123,7 +125,7 @@
 
 0.2.1 (2005-10-25):
   - Added ``short`` to ``epsilon.versions.Version``.
-  - fixed *setup.py* to use ``epsilon.version.short`` rather than static
+  - Fixed *setup.py* to use ``epsilon.version.short`` rather than static
     string.
 
 0.2.0 (2005-10-25):
