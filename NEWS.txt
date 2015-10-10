@@ -1,3 +1,15 @@
+0.7.1 (2015-10-10):
+  Major:
+
+  - certcreate should now be installed properly.
+
+  Minor:
+
+  - epsilon.benchmark now uses /proc/self/mounts instead of relying /etc/mtab
+    which is often wrong, or does not even exist.
+  - Fixed a test that interacted badly with Twisted 15.4.0.
+  - Updated the metadata in setup.py.
+
 0.7.0 (2014-01-15):
   Major:
 
