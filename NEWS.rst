@@ -55,6 +55,7 @@
     ``epsilon.sslverify``.
 
 0.5.9 (2008-01-18):
+  - No noted changes.
 
 0.5.8 (2007-11-27):
   - ``extime.Time.asHumanly`` no longer shows a time of day for all-day
