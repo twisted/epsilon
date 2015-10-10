@@ -18,7 +18,7 @@
   - setup.py now uses setuptools, and stores its dependencies. This
     means you no longer need to manually install dependencies.
   - *setup.py* no longer requires *Twisted* for *egg_info*, making it easier
-    to install Epsilon using pip.
+    to install *Epsilon* using *pip*.
   - Significant improvements to *PyPy* support. *PyPy* is now a supported
     platform, with CI support.
   - ``epsilon.release`` is now removed. It relied on a bunch of machinery
