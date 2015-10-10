@@ -2,6 +2,7 @@
   Major:
 
   - certcreate should now be installed properly.
+  - An `asRFC1123` method was added to `extime.Time`.
 
   Minor:
 
