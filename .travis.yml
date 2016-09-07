@@ -15,7 +15,7 @@ env:
 
 install:
   - pip install -U pip setuptools wheel
-  - pip install coveralls coverage
+  - pip install tox codecov
   - |
     if [ "${TOXENV::4}" == "pypy" ]; then
       git clone --depth 1 https://github.com/yyuu/pyenv.git ~/.pyenv
