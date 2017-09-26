@@ -377,12 +377,8 @@ def formatResults(name, sectorSize, before, after, error, timeout):
         read_ms = None
         write_ms = None
 
-    twisted_version = twisted.version._getSVNVersion()
-    if twisted_version is None:
-        twisted_version = twisted.version.short()
-    epsilon_version = epsilon.version._getSVNVersion()
-    if epsilon_version is None:
-        epsilon_version = epsilon.version.short()
+    twisted_version = twisted.version.short()
+    epsilon_version = epsilon.version.short()
 
     Results(
         version=STATS_VERSION,
