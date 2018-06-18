@@ -38,7 +38,8 @@ def createSSLCertificate(opts):
         sslopt[y] = opts[x]
     serialNumber = int(opts['serial-number'])
     ssc = KeyPair.generate().selfSignedCert(serialNumber, **sslopt)
-    file(opts['filename'], 'w').write(ssc.dumpPEM())
+    with file(opts['filename'], 'w') as f:
+        f.write(ssc.dumpPEM())
     if not opts['quiet']:
         print 'Wrote SSL certificate:'
         print ssc.inspect()
