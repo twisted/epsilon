@@ -10,6 +10,7 @@ setup(
     url="https://github.com/twisted/epsilon",
 
     install_requires=[
+        "zope.interface",
         "Twisted>=13.2.0",
         "PyOpenSSL>=0.13"
     ],
