@@ -445,3 +445,14 @@ class BenchmarkProcessTestCase(SpawnMixin, unittest.TestCase):
         p.stopTiming = lambda: stopped.append(None)
         self.mock.proto.childDataReceived(p.BACKCHANNEL_OUT, p.STOP)
         self.assertEquals(stopped, [None])
+
+
+
+class DiscoverDeviceTests(unittest.TestCase):
+    def test_emptyMounts(self):
+        p = filepath.FilePath(self.mktemp())
+        p.makedirs()
+        m = p.child('mounts')
+        m.touch()
+        self.assertEquals(
+            benchmark.discoverCurrentWorkingDevice(m.path), '<unknown>')
