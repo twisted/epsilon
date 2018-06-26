@@ -1,3 +1,9 @@
+0.7.2 (2018-06-24):
+  Minor:
+
+  - Fix ``epsilon.benchmark`` compatibility with newer *Twisted* versions.
+  - Add explicit dependency on ``zope.interface``.
+
 0.7.1 (2015-10-10):
   Major:
 
