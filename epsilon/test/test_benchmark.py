@@ -449,7 +449,14 @@ class BenchmarkProcessTestCase(SpawnMixin, unittest.TestCase):
 
 
 class DiscoverDeviceTests(unittest.TestCase):
+    """
+    Tests for L{discoverCurrentWorkingDevice}.
+    """
     def test_emptyMounts(self):
+        """
+        If the mounts file does not have the current path, the device is
+        detected as C{'unknown'}.
+        """
         p = filepath.FilePath(self.mktemp())
         p.makedirs()
         m = p.child('mounts')
