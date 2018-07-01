@@ -1,3 +1,8 @@
+0.7.3 (2018-06-24):
+  Minor:
+
+  - Make ``epsilon.benchmark`` handle ``/proc/self/mounts`` more leniently.
+
 0.7.2 (2018-06-24):
   Minor:
 
