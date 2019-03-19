@@ -11,8 +11,7 @@ setup(
 
     install_requires=[
         "zope.interface",
-        "Twisted>=13.2.0",
-        "PyOpenSSL>=0.13"
+        "Twisted[tls]>=13.2.0",
     ],
     packages=find_packages(),
     scripts=['bin/benchmark', 'bin/certcreate'],
