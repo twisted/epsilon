@@ -5,6 +5,8 @@ Utility functionality for creating wrapping sequences so as to transform
 their indices in some manner.
 """
 
+import six
+
 class SlicedView(object):
     """
     Wrapper around a sequence which allows indexing and non-extended
@@ -28,7 +30,7 @@ class SlicedView(object):
 
     def _getIndices(self):
         start, stop, step = self.bounds.indices(len(self.sequence))
-        indices = xrange(start, stop, step)
+        indices = six.moves.range(start, stop, step)
         return indices
 
 

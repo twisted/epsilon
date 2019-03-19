@@ -1,10 +1,11 @@
 # -*- test-case-name: epsilon.test.test_juice -*-
 # Copyright 2005 Divmod, Inc.  See LICENSE file for details
 
-__metaclass__ = type
-
 import warnings, pprint
+import keyword
+import io
 
+import six
 from twisted.internet.main import CONNECTION_LOST
 from twisted.internet.defer import Deferred, maybeDeferred, fail
 from twisted.internet.protocol import ServerFactory, ClientFactory
@@ -13,6 +14,7 @@ from twisted.python.failure import Failure
 from twisted.python import log, filepath
 
 from epsilon.liner import LineReceiver
+from epsilon.compat import long
 from epsilon import extime
 
 ASK = '_ask'
@@ -53,26 +55,27 @@ class JuiceBox(dict):
         return newBox
 
     def serialize(self,
-                  delimiter='\r\n',
-                  escaped='\r\n '):
+                  delimiter=b'\r\n',
+                  escaped=b'\r\n '):
         assert LENGTH not in self
+        delimiter = six.ensure_binary(delimiter)
+        escaped = six.ensure_binary(escaped)
 
         L = []
-        for (k, v) in self.iteritems():
+        for (k, v) in six.viewitems(self):
             if k == BODY:
                 k = LENGTH
                 v = str(len(self[BODY]))
-            L.append(k.replace('_', '-').title())
-            L.append(': ')
-            L.append(v.replace(delimiter, escaped))
+            L.append(six.ensure_binary(k).replace(b'_', b'-').title())
+            L.append(b': ')
+            L.append(six.ensure_binary(v).replace(delimiter, escaped))
             L.append(delimiter)
 
         L.append(delimiter)
         if BODY in self:
             L.append(self[BODY])
 
-        bytes = ''.join(L)
-        return bytes
+        return b''.join(L)
 
     def sendTo(self, proto):
         """
@@ -267,15 +270,9 @@ class DispatchMixin:
             return fail(UnhandledCommand(cmd))
         return maybeDeferred(self._wrap(fObj), box)
 
-PYTHON_KEYWORDS = [
-    'and', 'del', 'for', 'is', 'raise', 'assert', 'elif', 'from', 'lambda',
-    'return', 'break', 'else', 'global', 'not', 'try', 'class', 'except',
-    'if', 'or', 'while', 'continue', 'exec', 'import', 'pass', 'yield',
-    'def', 'finally', 'in', 'print']
-
 def normalizeKey(key):
-    lkey = key.lower().replace('-', '_')
-    if lkey in PYTHON_KEYWORDS:
+    lkey = six.ensure_str(key).lower().replace('-', '_')
+    if keyword.iskeyword(lkey):
         return lkey.title()
     return lkey
 
@@ -287,20 +284,19 @@ def parseJuiceHeaders(lines):
     @param lines: a list of lines.
     """
     b = JuiceBox()
-    bodylen = 0
     key = None
     for L in lines:
-        if L[0] == ' ':
+        if L[0] == b' ':
             # continuation
             assert key is not None
-            b[key] += '\r\n'+L[1:]
+            b[key] += b'\r\n'+L[1:]
             continue
-        parts = L.split(': ', 1)
+        parts = L.split(b': ', 1)
         if len(parts) != 2:
             raise MalformedJuiceBox("Wrong number of parts: %r" % (L,))
         key, value = parts
         key = normalizeKey(key)
-        b[key] = value
+        b[key] = six.ensure_str(value)
     return int(b.pop(LENGTH, 0)), b
 
 class JuiceParserBase(DispatchMixin):
@@ -318,7 +314,7 @@ class JuiceParserBase(DispatchMixin):
         if self.transport is not None:
             self.transport.loseConnection()
 
-    _counter = 0L
+    _counter = long(0)
 
     def _nextTag(self):
         self._counter += 1
@@ -332,7 +328,7 @@ class JuiceParserBase(DispatchMixin):
 
     def juiceBoxReceived(self, box):
         if debug:
-            log.msg("Juice receive: %s" % pprint.pformat(dict(box.iteritems())))
+            log.msg("Juice receive: %s" % pprint.pformat(dict(six.viewitems(box))))
 
         if ANSWER in box:
             question = self._outstandingRequests.pop(box[ANSWER])
@@ -591,19 +587,22 @@ class Boolean(Argument):
         else:
             return 'False'
 
-class Command:
-    class __metaclass__(type):
+
+class _CommandMeta(type):
         def __new__(cls, name, bases, attrs):
             re = attrs['reverseErrors'] = {}
             er = attrs['allErrors'] = {}
-            for v, k in attrs.get('errors',{}).iteritems():
+            for v, k in six.viewitems(attrs.get('errors',{})):
                 re[k] = v
                 er[v] = k
-            for v, k in attrs.get('fatalErrors',{}).iteritems():
+            for v, k in six.viewitems(attrs.get('fatalErrors',{})):
                 re[k] = v
                 er[v] = k
             return type.__new__(cls, name, bases, attrs)
 
+
+@six.add_metaclass(_CommandMeta)
+class Command:
     arguments = []
     response = []
     extra = []
@@ -813,7 +812,7 @@ class Juice(LineReceiver, JuiceParserBase):
             self._startingTLSBuffer.append(completeBox)
         else:
             if debug:
-                log.msg("Juice send: %s" % pprint.pformat(dict(completeBox.iteritems())))
+                log.msg("Juice send: %s" % pprint.pformat(dict(six.viewitems(completeBox))))
 
             self.transport.write(completeBox.serialize())
 
@@ -944,7 +943,6 @@ class Juice(LineReceiver, JuiceParserBase):
 
 VERSIONS = [1]
 
-from cStringIO import StringIO
 class _ParserHelper(Juice):
     def __init__(self):
         Juice.__init__(self, False)
@@ -971,7 +969,8 @@ class _ParserHelper(Juice):
     parse = classmethod(parse)
 
     def parseString(cls, data):
-        return cls.parse(StringIO(data))
+        with io.BytesIO(data) as f:
+            return cls.parse(f)
     parseString = classmethod(parseString)
 
 parse = _ParserHelper.parse

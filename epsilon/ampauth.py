@@ -5,10 +5,10 @@
 This module provides integration between L{AMP<twisted.protocols.amp.AMP>} and
 L{cred<twisted.cred>}.
 """
-
 from hashlib import sha1
 
-from zope.interface import implements
+import six
+from zope.interface import implementer
 
 from twisted.python.randbytes import secureRandom
 from twisted.cred.error import UnauthorizedLogin
@@ -20,8 +20,6 @@ from twisted.internet.protocol import ServerFactory
 from epsilon.iepsilon import IOneTimePad
 from epsilon.structlike import record
 
-__metaclass__ = type
-
 
 class UnhandledCredentials(Exception):
     """
@@ -30,19 +28,23 @@ class UnhandledCredentials(Exception):
     """
 
 
+def _errors():
+    return {
+        # Invalid username or password
+        UnauthorizedLogin: b'UNAUTHORIZED_LOGIN',
+        # No IBoxReceiver avatar
+        NotImplementedError: b'NOT_IMPLEMENTED_ERROR',
+    }
+
 
 class OTPLogin(Command):
     """
     Command to initiate a login attempt where a one-time pad is to be used in
     place of username/password credentials.
     """
-    arguments = [('pad', String())]
+    arguments = [(b'pad', String())]
 
-    errors = {
-        # Invalid username or password
-        UnauthorizedLogin: 'UNAUTHORIZED_LOGIN',
-        # No IBoxReceiver avatar
-        NotImplementedError: 'NOT_IMPLEMENTED_ERROR'}
+    errors = _errors()
 
 
 
@@ -52,8 +54,8 @@ class PasswordLogin(Command):
     to this command is a challenge which must be responded to based on the
     correct password associated with the username given to this command.
     """
-    arguments = [('username', String())]
-    response = [('challenge', String())]
+    arguments = [(b'username', String())]
+    response = [(b'challenge', String())]
 
 
 
@@ -76,7 +78,7 @@ def _calcResponse(challenge, nonce, password):
     @rtype: C{str}
     @return: A hash constructed from the three parameters.
     """
-    return sha1('%s %s %s' % (challenge, nonce, password)).digest()
+    return sha1(b'%s %s %s' % (challenge, nonce, password)).digest()
 
 
 
@@ -89,14 +91,10 @@ class PasswordChallengeResponse(Command):
     @param cnonce: A randomly generated string used only in this response.
     @param response: The SHA-1 hash of the challenge, cnonce, and password.
     """
-    arguments = [('cnonce', String()),
-                 ('response', String())]
+    arguments = [(b'cnonce', String()),
+                 (b'response', String())]
 
-    errors = {
-        # Invalid username or password
-        UnauthorizedLogin: 'UNAUTHORIZED_LOGIN',
-        # No IBoxReceiver avatar
-        NotImplementedError: 'NOT_IMPLEMENTED_ERROR'}
+    errors = _errors()
 
     @classmethod
     def determineFrom(cls, challenge, password):
@@ -108,17 +106,18 @@ class PasswordChallengeResponse(Command):
             calling this command.
         """
         nonce = secureRandom(16)
+        password = six.ensure_binary(password)
         response = _calcResponse(challenge, nonce, password)
         return dict(cnonce=nonce, response=response)
 
 
 
+@implementer(IUsernameHashedPassword)
 class _AMPUsernamePassword(record('username challenge nonce response')):
     """
     L{IUsernameHashedPassword} implementation used by L{PasswordLogin} and
     related commands.
     """
-    implements(IUsernameHashedPassword)
 
     def checkPassword(self, password):
         """
@@ -132,13 +131,13 @@ class _AMPUsernamePassword(record('username challenge nonce response')):
         @return: A C{bool}, C{True} if this credentials object agrees with the
             given password, C{False} otherwise.
         """
-        if isinstance(password, unicode):
-            password = password.encode('utf-8')
+        password = six.ensure_binary(password)
         correctResponse = _calcResponse(self.challenge, self.nonce, password)
         return correctResponse == self.response
 
 
 
+@implementer(IOneTimePad)
 class _AMPOneTimePad(record('padValue')):
     """
     L{IOneTimePad} implementation used by L{OTPLogin}.
@@ -146,7 +145,6 @@ class _AMPOneTimePad(record('padValue')):
     @ivar padValue: The value of the one-time pad.
     @type padValue: C{str}
     """
-    implements(IOneTimePad)
 
 
 
@@ -193,7 +191,8 @@ class CredReceiver(AMP):
         Actually login to our portal with the given credentials.
         """
         d = self.portal.login(credentials, None, IBoxReceiver)
-        def cbLoggedIn((interface, avatar, logout)):
+        def cbLoggedIn(result):
+            interface, avatar, logout = result
             self.logout = logout
             self.boxReceiver = avatar
             self.boxReceiver.startReceivingBoxes(self.boxSender)
@@ -230,6 +229,7 @@ class CredReceiver(AMP):
 
 
 
+@implementer(ICredentialsChecker)
 class OneTimePadChecker(record('pads')):
     """
     Checker which validates one-time pads.
@@ -237,7 +237,6 @@ class OneTimePadChecker(record('pads')):
     @ivar pads: Mapping between valid one-time pads and avatar IDs.
     @type pads: C{dict}
     """
-    implements(ICredentialsChecker)
 
     credentialInterfaces = (IOneTimePad,)
 

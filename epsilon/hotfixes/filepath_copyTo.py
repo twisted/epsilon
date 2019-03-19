@@ -20,6 +20,7 @@ from os import remove
 from stat import ST_MODE, ST_MTIME, ST_ATIME, ST_CTIME, ST_SIZE
 
 from stat import S_ISREG, S_ISDIR, S_ISLNK
+import six
 
 try:
     from os.path import islink
@@ -31,7 +32,7 @@ try:
     from os import urandom as randomBytes
 except ImportError:
     def randomBytes(n):
-        randomData = [random.randrange(256) for n in xrange(n)]
+        randomData = [random.randrange(256) for n in six.moves.range(n)]
         return ''.join(map(chr, randomData))
 
 try:

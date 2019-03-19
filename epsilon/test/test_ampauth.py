@@ -9,7 +9,8 @@ epsilon.hotfix.require('twisted', 'loopbackasync_reentrancy')
 
 from hashlib import sha1
 
-from zope.interface import implements
+import six
+from zope.interface import implementer
 from zope.interface.verify import verifyObject
 
 from twisted.python.failure import Failure
@@ -26,9 +27,6 @@ from epsilon.ampauth import (
     _AMPOneTimePad, _AMPUsernamePassword, _calcResponse, UnhandledCredentials,
     CredReceiver, PasswordLogin, OTPLogin, PasswordChallengeResponse,
     OneTimePadChecker, CredAMPServerFactory, login)
-
-__metaclass__ = type
-
 
 
 class StubRealm:
@@ -48,12 +46,12 @@ class StubRealm:
 
 
 
+@implementer(IBoxReceiver)
 class StubAvatar:
     """
     An L{IBoxReceiver} implementation which can be used as an avatar by the
     L{CredReceiver} tests.
     """
-    implements(IBoxReceiver)
 
     def startReceivingBoxes(self, sender):
         self.boxSender = sender
@@ -81,10 +79,10 @@ class CredReceiverTests(TestCase):
         Create a L{CredReceiver} hooked up to a fake L{IBoxSender} which
         records boxes sent through it.
         """
-        self.username = 'alice@example.com'
+        self.username = b'alice@example.com'
         self.password = 'foo bar baz'
         self.checker = InMemoryUsernamePasswordDatabaseDontUse()
-        self.checker.addUser(self.username, self.password)
+        self.checker.addUser(self.username, six.ensure_binary(self.password))
         self.avatar = StubAvatar()
         self.realm = StubRealm(self.avatar)
         self.portal = Portal(self.realm, [self.checker])
@@ -137,7 +135,7 @@ class CredReceiverTests(TestCase):
         """
         L{CredReceiver} responds to the L{OTPLogin} command.
         """
-        PAD = 'test_otpLoginResponder'
+        PAD = b'test_otpLoginResponder'
         self.portal.registerChecker(OneTimePadChecker({PAD: 'user'}))
         d = self.client.callRemote(OTPLogin, pad=PAD)
         def cbLoggedIn(result):
@@ -173,8 +171,8 @@ class CredReceiverTests(TestCase):
         Each time L{PasswordChallengeResponse.determineFrom} is used, it
         generates a different C{cnonce} value.
         """
-        first = PasswordChallengeResponse.determineFrom('a', 'b')
-        second = PasswordChallengeResponse.determineFrom('a', 'b')
+        first = PasswordChallengeResponse.determineFrom(b'a', b'b')
+        second = PasswordChallengeResponse.determineFrom(b'a', b'b')
         self.assertNotEqual(first['cnonce'], second['cnonce'])
 
 
@@ -184,8 +182,8 @@ class CredReceiverTests(TestCase):
         response is valid.
         """
         challenge = self.server.passwordLogin(self.username)['challenge']
-        cnonce = '123abc'
-        cleartext = '%s %s %s' % (challenge, cnonce, self.password)
+        cnonce = b'123abc'
+        cleartext = b'%s %s %s' % (challenge, cnonce, six.ensure_binary(self.password))
         response = sha1(cleartext).digest()
         d = self.server.passwordChallengeResponse(cnonce, response)
         def cbLoggedIn(result):
@@ -249,7 +247,7 @@ class CredReceiverTests(TestCase):
         """
         challenge = self.server.passwordLogin(self.username)['challenge']
         return self.assertFailure(
-            self.server.passwordChallengeResponse(cnonce='bar', response='baz'),
+            self.server.passwordChallengeResponse(cnonce=b'bar', response=b'baz'),
             UnauthorizedLogin)
 
 
@@ -295,7 +293,7 @@ class CredReceiverTests(TestCase):
         """
         boxReceiver = self.server.boxReceiver
         loginDeferred = login(
-            self.client, UsernamePassword(self.username + 'x', self.password))
+            self.client, UsernamePassword(self.username + b'x', self.password))
         self.assertFailure(loginDeferred, UnauthorizedLogin)
         def cbFailed(ignored):
             self.assertIdentical(self.server.boxReceiver, boxReceiver)
@@ -327,8 +325,8 @@ class AMPUsernamePasswordTests(TestCase):
         self.username = 'user name'
         password = u'foo bar\N{LATIN SMALL LETTER E WITH ACUTE}'
         self.password = password.encode('utf-8')
-        self.challenge = '123xyzabc789'
-        self.nonce = '1 2 3 4 5'
+        self.challenge = b'123xyzabc789'
+        self.nonce = b'1 2 3 4 5'
         self.response = _calcResponse(
             self.challenge, self.nonce, self.password)
         self.credentials = _AMPUsernamePassword(

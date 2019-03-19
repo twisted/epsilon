@@ -4,7 +4,8 @@
 Tests for L{epsilon.amprouter}.
 """
 
-from zope.interface import implements
+import six
+from zope.interface import implementer
 from zope.interface.verify import verifyObject
 
 from twisted.python.failure import Failure
@@ -14,6 +15,7 @@ from twisted.trial.unittest import TestCase
 from epsilon.amprouter import _ROUTE, RouteNotConnected, Router
 
 
+@implementer(IBoxReceiver)
 class SomeReceiver:
     """
     A stub AMP box receiver which just keeps track of whether it has been
@@ -31,7 +33,6 @@ class SomeReceiver:
     @ivar stopped: C{False} until C{stopReceivingBoxes} is called, then
         C{True}.
     """
-    implements(IBoxReceiver)
 
     sender = None
     reason = None
@@ -58,11 +59,11 @@ class SomeReceiver:
 
 
 
+@implementer(IBoxSender)
 class CollectingSender:
     """
     An L{IBoxSender} which collects and saves boxes and errors sent to it.
     """
-    implements(IBoxSender)
 
     def __init__(self):
         self.boxes = []
@@ -74,8 +75,9 @@ class CollectingSender:
         Reject boxes with non-string keys or values; save all the rest in
         C{self.boxes}.
         """
-        for k, v in box.iteritems():
-            if not (isinstance(k, str) and isinstance(v, str)):
+        serial_types = (six.text_type, six.binary_type)
+        for k, v in six.viewitems(box):
+            if not (isinstance(k, serial_types) and isinstance(v, serial_types)):
                 raise TypeError("Cannot send boxes containing non-strings")
         self.boxes.append(box)
 

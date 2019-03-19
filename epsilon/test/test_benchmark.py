@@ -3,7 +3,8 @@ from epsilon import hotfix
 hotfix.require('twisted', 'delayedcall_seconds')
 hotfix.require('twisted', 'timeoutmixin_calllater')
 
-import os, StringIO
+import os
+import io
 
 from twisted.trial import unittest
 from twisted.internet import error, base
@@ -69,11 +70,12 @@ class DiskstatTestCase(unittest.TestCase):
         Test the parsing of multiple lines into a dict mapping device names and
         numbers to diststat instances.
         """
-        s = StringIO.StringIO(
-            "1 2 abc 3 4 5 6 7 8 9 10 11 12 13\n"
-            "14 15 def 16 17 18 19 20 21 22 23 24 25 26\n")
-        ds = list(benchmark.parseDiskStats(s))
-        ds.sort()
+        d = (
+            b"1 2 abc 3 4 5 6 7 8 9 10 11 12 13\n"
+            b"14 15 def 16 17 18 19 20 21 22 23 24 25 26\n")
+        with io.BytesIO(d) as s:
+            ds = sorted(list(benchmark.parseDiskStats(s)))
+
         self.assertEquals(ds[0][0], "abc")
         self.assertEquals(ds[0][1].readCount, 3)
         self.assertEquals(ds[0][1].mergedReadCount, 4)
@@ -242,9 +244,8 @@ class ReporterTestCase(unittest.TestCase):
     def testGetSize(self):
         path = self.mktemp()
         os.makedirs(path)
-        fObj = file(os.path.join(path, 'foo'), 'wb')
-        fObj.write('x' * 10)
-        fObj.close()
+        with io.open(os.path.join(path, 'foo'), 'wb') as fObj:
+            fObj.write(b'x' * 10)
         self.assertEquals(
             benchmark.getSize(filepath.FilePath(path)),
             os.path.getsize(path) + os.path.getsize(os.path.join(path, 'foo')))
@@ -342,7 +343,8 @@ class BasicProcessTestCase(SpawnMixin, unittest.TestCase):
         self.mock.proto.childDataReceived(2, 'stderr bytes')
         self.mock.proto.childDataReceived(1, 'more stdout bytes')
 
-        def cbProcessFinished((proto, status, output)):
+        def cbProcessFinished(result):
+            proto, status, output = result
             self.assertIdentical(proto, self.mock.proto)
             self.assertEquals(status, 0)
             self.assertEquals(

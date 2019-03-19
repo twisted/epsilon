@@ -12,20 +12,20 @@ def pluginModules(moduleNames):
             yield namedAny(moduleName)
         except ImportError:
             pass
-        except ValueError, ve:
+        except ValueError as ve:
             if ve.args[0] != 'Empty module name':
                 traceback.print_exc()
         except:
             traceback.print_exc()
 
 def _regeneratePluginCache(pluginPackages):
-    print 'Regenerating cache with path: ',
+    print('Regenerating cache with path: ')
     pprint.pprint(sys.path)
     from twisted import plugin
     for pluginModule in pluginModules([
         p + ".plugins" for p in pluginPackages]):
         # Not just *some* zigs, mind you - *every* zig:
-        print 'Full plugin list for %r: ' % (pluginModule.__name__)
+        print('Full plugin list for %r: ' % (pluginModule.__name__))
         pprint.pprint(list(plugin.getPlugins(plugin.IPlugin, pluginModule)))
 
 def regeneratePluginCache(dist, pluginPackages):
@@ -53,7 +53,7 @@ def autosetup(**kw):
         if '.' in package:
             continue
         D = datafiles[package] = []
-        print 'Files in package %r:' % (package,)
+        print('Files in package %r:' % (package,))
         pprint.pprint(os.listdir(package))
         for (dirpath, dirnames, filenames) in os.walk(package):
             dirnames[:] = [p for p in dirnames if not p.startswith('.')]
@@ -67,7 +67,7 @@ def autosetup(**kw):
         'packages': packages,
         'package_data': datafiles,
         }
-    print 'Automatically determined setup() args:'
+    print('Automatically determined setup() args:')
     pprint.pprint(autoresult, indent=4)
     assert 'packages' not in kw
     assert 'package_data' not in kw

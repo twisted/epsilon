@@ -4,6 +4,8 @@
 Provides an 'attribute' class for one-use descriptors.
 """
 
+import six
+
 attribute = None
 
 class _MetaAttribute(type):
@@ -17,6 +19,7 @@ class _MetaAttribute(type):
             return secretClass
         return secretClass()
 
+@six.add_metaclass(_MetaAttribute)
 class attribute(object):
     """
     Convenience class for providing one-shot descriptors, similar to
@@ -47,8 +50,6 @@ class attribute(object):
             ...
         AttributeError: attribute cannot be removed
     """
-
-    __metaclass__ = _MetaAttribute
 
     def __get__(self, oself, type):
         """
