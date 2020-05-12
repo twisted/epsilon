@@ -40,8 +40,8 @@ def createSSLCertificate(opts):
     ssc = KeyPair.generate().selfSignedCert(serialNumber, **sslopt)
     file(opts['filename'], 'w').write(ssc.dumpPEM())
     if not opts['quiet']:
-        print 'Wrote SSL certificate:'
-        print ssc.inspect()
+        print('Wrote SSL certificate:')
+        print(ssc.inspect())
     return ssc
 
 
@@ -56,7 +56,7 @@ def main(args=None):
     o = Options()
     try:
         o.parseOptions(args)
-    except usage.UsageError, e:
+    except usage.UsageError as e:
         raise SystemExit(str(e))
     else:
         return createSSLCertificate(o)
