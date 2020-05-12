@@ -370,7 +370,7 @@ class FilePath:
         try:
             os.rename(self.path, destination.path)
             self.restat(False)
-        except OSError, ose:
+        except OSError as ose:
             if ose.errno == errno.EXDEV:
                 # man 2 rename, ubuntu linux 5.10 "breezy":
 
