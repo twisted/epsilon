@@ -245,7 +245,7 @@ class ExposeTests:
             def bar(self):
                 return 8
         b = Baz()
-	self.assertRaises(MethodNotExposed, self.otherExposer.get, b, 'bar')
+        self.assertRaises(MethodNotExposed, self.otherExposer.get, b, 'bar')
 
 
     def test_sameKeyOnDifferentTypes(self):

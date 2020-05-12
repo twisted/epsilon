@@ -182,7 +182,8 @@ class StructLike(unittest.TestCase):
             return result
         d2 = deferToThreadPool(reactor, pool, otherRepr)
 
-        def done((thread1repr, thread2repr)):
+        def done(thread1repr_thread2repr):
+            thread1repr, thread2repr =thread1repr_thread2repr
             knownGood = 'MyRecord(something=1, somethingElse=sticky)'
             # self.assertEquals(thread1repr, thread2repr)
             self.assertEquals(thread1repr, knownGood)

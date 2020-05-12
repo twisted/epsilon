@@ -61,7 +61,7 @@ class TestTime(unittest.TestCase):
         try:
             import pytz
         except ImportError:
-            raise unittest.SkipTest, 'pytz could not be imported'
+            raise unittest.SkipTest('pytz could not be imported')
         tz = pytz.timezone('America/Detroit')
         time = extime.Time.fromRFC2822('Wed, 06 Apr 2005 23:12:27 -0400')
         dtime = time.asDatetime(tz)
@@ -187,14 +187,14 @@ class TestTime(unittest.TestCase):
         try:
             extime.Time.fromISO8601TimeAndDate('2004-366')
         except ValueError:
-            raise unittest.FailTest, 'leap years should have 366 days'
+            raise unittest.FailTest('leap years should have 366 days')
 
         try:
             extime.Time.fromISO8601TimeAndDate('2004-123T14-0600')
             extime.Time.fromISO8601TimeAndDate('2004-123T14:13-0600')
             extime.Time.fromISO8601TimeAndDate('2004-123T14:13:51-0600')
         except ValueError:
-            raise unittest.FailTest, 'timezone should be allowed if time with *any* resolution is specified'
+            raise unittest.FailTest('timezone should be allowed if time with *any* resolution is specified')
 
         self.assertEquals( extime.Time.fromISO8601TimeAndDate('2005').resolution, datetime.timedelta(days=365) )
         self.assertEquals( extime.Time.fromISO8601TimeAndDate('2004').resolution, datetime.timedelta(days=366) )
@@ -343,9 +343,9 @@ class TestTime(unittest.TestCase):
             '2004-12-06T15:15:16' )
 
     def test_asStructTime(self):
-        self.assertEquals( self._createReference().asStructTime(), (2004, 12, 06, 14, 15, 16, 0, 341, 0) )
-        self.assertEquals( self._createReference().asStructTime(tzinfo=self.MST()), (2004, 12, 06, 7, 15, 16, 0, 341, 0) )
-        self.assertEquals( self._createReference().asStructTime(tzinfo=self.CET()), (2004, 12, 06, 15, 15, 16, 0, 341, 0) )
+        self.assertEquals( self._createReference().asStructTime(), (2004, 12, 6, 14, 15, 16, 0, 341, 0) )
+        self.assertEquals( self._createReference().asStructTime(tzinfo=self.MST()), (2004, 12, 6, 7, 15, 16, 0, 341, 0) )
+        self.assertEquals( self._createReference().asStructTime(tzinfo=self.CET()), (2004, 12, 6, 15, 15, 16, 0, 341, 0) )
 
     def test_asNaiveDatetime(self):
         def ref(tzinfo):

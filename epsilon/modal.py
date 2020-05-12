@@ -1,6 +1,8 @@
 # -*- test-case-name: epsilon.test.test_modes -*-
 
-import new
+import types
+
+import six
 
 class ModalMethod(object):
     """A descriptor wrapping multiple implementations of a particular method.
@@ -37,7 +39,7 @@ class ModalMethod(object):
             raise AttributeError(
                 "Method %r missing from mode %r on %r" % (self.name, mode, instance))
 
-        return new.instancemethod(func, instance, owner)
+        return types.MethodType(func, instance)
 
 class mode(object):
     """
@@ -100,18 +102,20 @@ class ModalType(type):
         implementations = {}
 
         keepAttrs = {'mode': initialMode}
-        for (k, v) in attrs.iteritems():
+        for (k, v) in six.iteritems(attrs):
             if isinstance(v, type) and issubclass(v, mode):
-                for (methName, methDef) in v.__dict__.iteritems():
+                for (methName, methDef) in six.iteritems(v.__dict__):
                     if methName not in ('__module__', '__file__', '__name__'):
                         implementations.setdefault(methName, {})[k] = methDef
             keepAttrs[k] = v
 
-        for (methName, methDefs) in implementations.iteritems():
+        for (methName, methDefs) in six.viewitems(implementations):
             keepAttrs[methName] = ModalMethod(methName, methDefs, modeAttribute)
 
         return super(ModalType, cls).__new__(cls, name, bases, keepAttrs)
 
+
+@six.add_metaclass(ModalType)
 class Modal(object):
 
     __metaclass__ = ModalType

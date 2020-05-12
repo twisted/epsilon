@@ -26,7 +26,7 @@ class remembered(record('creationFunction')):
         Retrieve the value if already cached, otherwise, call the
         C{creationFunction} to create it.
         """
-        remembername = "_remembered_" + self.creationFunction.func_name
+        remembername = "_remembered_" + self.creationFunction.__name__
         rememberedval = oself.__dict__.get(remembername, None)
         if rememberedval is not None:
             return rememberedval

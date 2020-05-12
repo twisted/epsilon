@@ -3,7 +3,11 @@ Tests for L{epsilon.caseless}.
 """
 
 import sys
+
+import six
 from twisted.trial.unittest import TestCase
+
+from epsilon.compat import cmp
 from epsilon.caseless import Caseless
 
 class CaselessTestCase(TestCase):
@@ -25,8 +29,8 @@ class CaselessTestCase(TestCase):
         """
         Generate a variety of C{str} and C{unicode} test samples.
         """
-        for t in [str, unicode]:
-            yield t()
+        for t in [six.ensure_binary, six.ensure_str]:
+            yield t('')
             for s in self._casings('foo'):
                 yield t(s)
 
@@ -68,7 +72,7 @@ class CaselessTestCase(TestCase):
         L{Caseless} should delegate L{unicode}.
         """
         for s in self._strings():
-            self.assertEquals(unicode(Caseless(s)), unicode(s))
+            self.assertEquals(six.text_type(Caseless(s)), six.text_type(s))
 
 
     def test_len(self):
@@ -84,7 +88,7 @@ class CaselessTestCase(TestCase):
         L{Caseless} should delegate indexing/slicing.
         """
         for s in self._strings():
-            for i in xrange(len(s)):
+            for i in six.moves.range(len(s)):
                 self.assertEquals(Caseless(s)[i], s[i])
                 self.assertEquals(Caseless(s)[:i], s[:i])
                 self.assertEquals(Caseless(s)[i:], s[i:])

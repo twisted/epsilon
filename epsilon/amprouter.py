@@ -8,13 +8,11 @@ multiple L{IBoxReceiver}/I{IBoxSender} pairs over a single L{AMP} connection.
 
 from itertools import count
 
-from zope.interface import implements
-
+import six
 from twisted.protocols.amp import IBoxReceiver, IBoxSender
+from zope.interface import implementer
 
 from epsilon.structlike import record
-
-__metaclass__ = type
 
 _ROUTE = '_route'
 _unspecified = object()
@@ -28,6 +26,7 @@ class RouteNotConnected(Exception):
 
 
 
+@implementer(IBoxSender)
 class Route(record('router receiver localRouteName remoteRouteName',
                    remoteRouteName=_unspecified)):
     """
@@ -49,7 +48,6 @@ class Route(record('router receiver localRouteName remoteRouteName',
     @ivar remoteRouteName: The name of the route which will be added to all
         boxes sent to this sender.  If C{None}, no route will be added.
     """
-    implements(IBoxSender)
 
     def connectTo(self, remoteRouteName):
         """
@@ -91,7 +89,7 @@ class Route(record('router receiver localRouteName remoteRouteName',
         if self.remoteRouteName is _unspecified:
             raise RouteNotConnected()
         if self.remoteRouteName is not None:
-            box[_ROUTE] = self.remoteRouteName.encode('ascii')
+            box[_ROUTE] = self.remoteRouteName
         self.router._sender.sendBox(box)
 
 
@@ -103,7 +101,7 @@ class Route(record('router receiver localRouteName remoteRouteName',
         self.router._sender.unhandledError(failure)
 
 
-
+@implementer(IBoxReceiver)
 class Router:
     """
     An L{IBoxReceiver} implementation which demultiplexes boxes from an AMP
@@ -124,7 +122,6 @@ class Router:
     @ivar _routeCounter: A L{itertools.count} instance used to generate unique
         identifiers for routes in this router.
     """
-    implements(IBoxReceiver)
 
     _routes = None
     _sender = None
@@ -141,7 +138,7 @@ class Router:
 
         @rtype: C{unicode}
         """
-        return unicode(self._routeCounter.next())
+        return six.text_type(next(self._routeCounter))
 
 
     def bindRoute(self, receiver, routeName=_unspecified):
@@ -173,7 +170,7 @@ class Router:
         Initialize route tracking objects.
         """
         self._sender = sender
-        for routeName, route in self._unstarted.iteritems():
+        for routeName, route in six.viewitems(self._unstarted):
             # Any route which has been bound but which does not yet have a
             # remote route name should not yet be started.  These will be
             # started in Route.connectTo.
@@ -196,7 +193,7 @@ class Router:
         """
         Stop all the L{IBoxReceiver}s which have been added to this router.
         """
-        for routeName, route in self._routes.iteritems():
+        for routeName, route in six.viewitems(self._routes):
             route.stop(reason)
         self._routes = None
 

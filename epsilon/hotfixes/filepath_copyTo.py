@@ -20,6 +20,7 @@ from os import remove
 from stat import ST_MODE, ST_MTIME, ST_ATIME, ST_CTIME, ST_SIZE
 
 from stat import S_ISREG, S_ISDIR, S_ISLNK
+import six
 
 try:
     from os.path import islink
@@ -31,7 +32,7 @@ try:
     from os import urandom as randomBytes
 except ImportError:
     def randomBytes(n):
-        randomData = [random.randrange(256) for n in xrange(n)]
+        randomData = [random.randrange(256) for n in six.moves.range(n)]
         return ''.join(map(chr, randomData))
 
 try:
@@ -369,7 +370,7 @@ class FilePath:
         try:
             os.rename(self.path, destination.path)
             self.restat(False)
-        except OSError, ose:
+        except OSError as ose:
             if ose.errno == errno.EXDEV:
                 # man 2 rename, ubuntu linux 5.10 "breezy":
 

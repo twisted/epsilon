@@ -8,7 +8,8 @@ See the class 'Time' for details.
 import datetime
 import re
 
-from email.Utils import formatdate, parsedate_tz
+from email.utils import formatdate, parsedate_tz
+from epsilon.compat import cmp
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -226,13 +227,13 @@ class Time(object):
         ampm = (match.group('ampm') or '').lower()
         if ampm:
             if not 1 <= hour <= 12:
-                raise ValueError, 'hour %i is not in 1..12' % (hour,)
+                raise ValueError('hour %i is not in 1..12' % (hour,))
             if hour == 12 and ampm == 'am':
                 hour = 0
             elif ampm == 'pm':
                 hour += 12
         if not 0 <= hour <= 23:
-            raise ValueError, 'hour %i is not in 0..23' % (hour,)
+            raise ValueError('hour %i is not in 0..23' % (hour,))
 
         dtnow = now.asDatetime(tzinfo).replace(second=0, microsecond=0)
         dtthen = dtnow.replace(hour=hour, minute=minute)
@@ -336,7 +337,7 @@ class Time(object):
                 return creator(klass, match, tzinfo, now)
             except ValueError:
                 continue
-        raise ValueError, 'could not parse date: %r' % (humanStr,)
+        raise ValueError('could not parse date: %r' % (humanStr,))
 
     fromHumanly = classmethod(fromHumanly)
 
@@ -459,7 +460,7 @@ class Time(object):
                 # don't forget leap years
                 ('dayofyear', 1, 366)]:
                 if not min <= groups[group] <= max:
-                    raise ValueError, '%s must be in %i..%i' % (group, min, max)
+                    raise ValueError('%s must be in %i..%i' % (group, min, max))
 
         def determineResolution():
             if match.group('fractionalsec') is not None:
@@ -640,7 +641,7 @@ class Time(object):
         maybeStructTimePlus = parsedate_tz(rfc822string)
 
         if maybeStructTimePlus is None:
-            raise ValueError, 'could not parse RFC 2822 date %r' % (rfc822string,)
+            raise ValueError('could not parse RFC 2822 date %r' % (rfc822string,))
         structTimePlus = sanitizeStructTime(maybeStructTimePlus)
         offsetInSeconds = structTimePlus[-1]
         if offsetInSeconds is None:
@@ -964,7 +965,7 @@ class Time(object):
 
     def __add__(self, addend):
         if not isinstance(addend, datetime.timedelta):
-            raise TypeError, 'expected a datetime.timedelta instance'
+            raise TypeError('expected a datetime.timedelta instance')
         return Time.fromDatetime(self._time + addend)
 
     def __sub__(self, subtrahend):

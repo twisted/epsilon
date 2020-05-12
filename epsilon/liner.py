@@ -1,16 +1,14 @@
 # Copyright 2005 Divmod, Inc.  See LICENSE file for details
 # -*- test-case-name: vertex.test.test_juice -*-
 
-__metaclass__ = type
-
 from twisted.internet.protocol import Protocol
 
 class LineReceiver(Protocol):
 
     lineMode = True
     MAX_LINE_LENGTH = 1024 * 1024
-    buffer = ''
-    delimiter = '\r\n'
+    buffer = b''
+    delimiter = b'\r\n'
 
     def lineReceived(self, line):
         pass
@@ -18,7 +16,7 @@ class LineReceiver(Protocol):
     def rawDataReceived(self, data):
         pass
 
-    def setLineMode(self, extra=''):
+    def setLineMode(self, extra=b''):
         self.lineMode = True
         if extra:
             self.dataReceived(extra)
@@ -48,7 +46,7 @@ class LineReceiver(Protocol):
             line = buffer[begin:end]
             self.lineReceived(line)
             if self.isDisconnecting():
-                self.buffer = ''
+                self.buffer = b''
                 return
             begin = end + len(delimiter)
         else:
@@ -56,7 +54,7 @@ class LineReceiver(Protocol):
         if begin:
             buffer = buffer[begin:]
         if raw:
-            self.buffer = ''
+            self.buffer = b''
             if self.isDisconnecting():
                 return
             if buffer:
