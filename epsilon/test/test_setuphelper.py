@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import sys
 
@@ -15,7 +16,7 @@ class TestCacheRegeneration(unittest.TestCase):
                 module = namedAny(modname)
                 self.removedModules.append(module)
             except:
-                print 'COULD NOT LOAD', modname
+                print('COULD NOT LOAD', modname)
         self.sysmodules = sys.modules.copy()
         self.syspath = sys.path[:]
 

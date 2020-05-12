@@ -151,8 +151,7 @@ def record(*a, **kw):
     elif len(a) == 0:
         if not kw:
             raise TypeError("Attempted to define a record with no attributes.")
-        attributeNames = kw.keys()
-        attributeNames.sort()
+        attributeNames = sorted(kw.keys())
     else:
         raise TypeError(
             "record must be called with zero or one positional arguments")

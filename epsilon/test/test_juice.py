@@ -1,5 +1,6 @@
 # Copyright 2005 Divmod, Inc.  See LICENSE file for details
 
+import six
 
 from epsilon import juice
 from epsilon.test import iosim
@@ -135,7 +136,7 @@ def connectedServerAndClient(ServerClass=lambda: SimpleSymmetricProtocol(True),
         *a, **kw)
 
 class TotallyDumbProtocol(protocol.Protocol):
-    buf = ''
+    buf = b''
     def dataReceived(self, data):
         self.buf += data
 
@@ -151,22 +152,22 @@ class LiteralJuice(juice.Juice):
 class LiteralParsingTest(unittest.TestCase):
     def testBasicRequestResponse(self):
         c, s, p = connectedServerAndClient(ClientClass=TotallyDumbProtocol)
-        HELLO = 'abcdefg'
-        ASKTOK = 'hand-crafted-ask'
-        c.transport.write(("""-Command: HeLlO
+        HELLO = b'abcdefg'
+        ASKTOK = b'hand-crafted-ask'
+        c.transport.write((b"""-Command: HeLlO
 -Ask: %s
 Hello: %s
 World: this header is ignored
 
-""" % (ASKTOK, HELLO,)).replace('\n','\r\n'))
+""" % (ASKTOK, HELLO,)).replace(b'\n',b'\r\n'))
         p.flush()
         asserts = {'hello': HELLO,
                    '-answer': ASKTOK}
-        hdrs = [j.split(': ') for j in c.buf.split('\r\n')[:-2]]
+        hdrs = [j.split(b': ') for j in c.buf.split(b'\r\n')[:-2]]
         self.assertEquals(len(asserts), len(hdrs))
         for hdr in hdrs:
             k, v = hdr
-            self.assertEquals(v, asserts[k.lower()])
+            self.assertEquals(v, asserts[six.ensure_str(k).lower()])
 
     def testParsingRoundTrip(self):
         c, s, p = connectedServerAndClient(ClientClass=lambda: LiteralJuice(False),
@@ -181,26 +182,25 @@ World: this header is ignored
         BLANKLINE = ('newline3', 'test\r\n\r\nblank\r\n\r\nline')
         BODYTEST = (juice.BODY, 'blah\r\n\r\ntesttest')
 
-        testData = [
-            [SIMPLE],
-            [SIMPLE, BODYTEST],
-            [SIMPLE, CE],
-            [SIMPLE, CR],
-            [SIMPLE, CE, CR, LF],
-            [CE, CR, LF],
-            [SIMPLE, NEWLINE, CE, NEWLINE2],
-            [BODYTEST, SIMPLE, NEWLINE]
-            ]
-
-        for test in testData:
+        def onetest(test):
             jb = juice.Box()
             jb.update(dict(test))
             jb.sendTo(c)
             p.flush()
             self.assertEquals(s.boxes[-1], jb)
 
-SWITCH_CLIENT_DATA = 'Success!'
-SWITCH_SERVER_DATA = 'No, really.  Success.'
+        onetest([SIMPLE])
+        onetest([SIMPLE, BODYTEST])
+        onetest([SIMPLE, CE])
+        onetest([SIMPLE, CR])
+        onetest([SIMPLE, CE, CR, LF])
+        onetest([CE, CR, LF])
+        onetest([SIMPLE, NEWLINE, CE, NEWLINE2])
+        onetest([BODYTEST, SIMPLE, NEWLINE])
+
+
+SWITCH_CLIENT_DATA = b'Success!'
+SWITCH_SERVER_DATA = b'No, really.  Success.'
 
 class AppLevelTest(unittest.TestCase):
     def testHelloWorld(self):
@@ -266,11 +266,12 @@ class AppLevelTest(unittest.TestCase):
 
         switchDeferred = c.switchToTestProtocol()
 
-        def cbConnsLost(((serverSuccess, serverData), (clientSuccess, clientData))):
+        def cbConnsLost(results):
+            (serverSuccess, serverData), (clientSuccess, clientData) = results
             self.failUnless(serverSuccess)
             self.failUnless(clientSuccess)
-            self.assertEquals(''.join(serverData), SWITCH_CLIENT_DATA)
-            self.assertEquals(''.join(clientData), SWITCH_SERVER_DATA)
+            self.assertEquals(b''.join(serverData), SWITCH_CLIENT_DATA)
+            self.assertEquals(b''.join(clientData), SWITCH_SERVER_DATA)
             self.testSucceeded = True
 
         def cbSwitch(proto):

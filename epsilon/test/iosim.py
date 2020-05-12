@@ -1,8 +1,9 @@
-
 """Utilities and helpers for simulating a network
 """
+from __future__ import print_function
 
-from cStringIO import StringIO
+import contextlib
+import io
 
 from twisted.internet import error
 
@@ -16,7 +17,7 @@ def readAndDestroy(iodata):
         iodata.seek(0)
         iodata.truncate()
     except ValueError:
-        print '<bug in FileTransport, early close>'
+        print('<bug in FileTransport, early close>')
         result = ''
     return result
 
@@ -55,20 +56,21 @@ class IOPump:
         Returns whether any data was moved.
         """
         if self.debug or debug:
-            print '-- GLUG --'
+            print('-- GLUG --')
         sData = readAndDestroy(self.serverIO)
         cData = readAndDestroy(self.clientIO)
         self.client.transport._checkProducer()
         self.server.transport._checkProducer()
         if self.debug or debug:
-            print '.'
+            print('.')
             # XXX slightly buggy in the face of incremental output
             if cData:
-                for line in cData.split('\r\n'):
-                    print 'C: '+line
+                for line in cData.split(b'\r\n'):
+                    print('C: ' + line)
+            print(repr(sData))
             if sData:
-                for line in sData.split('\r\n'):
-                    print 'S: '+line
+                for line in sData.split(b'\r\n'):
+                    print('S: ' + line)
         if cData:
             self.server.dataReceived(cData)
         if sData:
@@ -77,14 +79,14 @@ class IOPump:
             return True
         if self.server.transport.disconnecting and not self.server.transport.disconnected:
             if self.debug or debug:
-                print '* C'
+                print('* C')
             self.server.transport.disconnected = True
             self.client.transport.disconnecting = True
             self.client.connectionLost(error.ConnectionDone("Connection done"))
             return True
         if self.client.transport.disconnecting and not self.client.transport.disconnected:
             if self.debug or debug:
-                print '* S'
+                print('* S')
             self.client.transport.disconnected = True
             self.server.transport.disconnecting = True
             self.server.connectionLost(error.ConnectionDone("Connection done"))
@@ -92,7 +94,8 @@ class IOPump:
         return False
 
 
-def connectedServerAndClient(ServerClass, ClientClass,
+@contextlib.contextmanager
+def _connectedServerAndClient(ServerClass, ClientClass,
                              clientTransportWrapper=utils.FileWrapper,
                              serverTransportWrapper=utils.FileWrapper,
                              debug=False):
@@ -100,11 +103,30 @@ def connectedServerAndClient(ServerClass, ClientClass,
     """
     c = ClientClass()
     s = ServerClass()
-    cio = StringIO()
-    sio = StringIO()
+    cio = io.BytesIO()
+    sio = io.BytesIO()
     c.makeConnection(clientTransportWrapper(cio))
     s.makeConnection(serverTransportWrapper(sio))
     pump = IOPump(c, s, cio, sio, debug)
     # kick off server greeting, etc
     pump.flush()
-    return c, s, pump
+    yield c, s, pump
+
+
+class connectedServerAndClient(tuple):
+    """
+    A tuple and context manager that delegates to
+    _connectedServerAndClient for backwards compatibility
+    """
+    def __new__(cls, *args, **kwargs):
+        result = _connectedServerAndClient(*args, **kwargs)
+        v = result.__enter__()
+        self = super(connectedServerAndClient, cls).__new__(cls, v)
+        self._result = result
+        return self
+
+    def __enter__():
+        return self
+
+    def __close__(self, *args, **kwargs):
+        return self._result.__close__(*args, **kwargs)

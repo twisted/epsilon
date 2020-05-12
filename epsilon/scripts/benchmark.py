@@ -4,9 +4,11 @@
 Functions for running a Python file in a child process and recording resource
 usage information and other statistics about it.
 """
+from __future__ import print_function
 
-import os, time, sys, socket, StringIO, pprint, errno
+import os, time, sys, socket, io, pprint, errno
 
+import six
 import twisted
 from twisted.python import log, filepath, failure, util
 from twisted.internet import reactor, protocol, error, defer
@@ -51,7 +53,7 @@ def parseDiskStatLine(L):
         factory = partitionstat
     else:
         factory = diskstat
-    return device, factory(*map(int, parts[3:]))
+    return six.ensure_str(device), factory(*map(int, parts[3:]))
 
 
 
@@ -70,7 +72,8 @@ def captureStats():
     Parse the current contents of C{/proc/diskstats} into a dict mapping device
     names to instances of the appropriate stat record.
     """
-    return dict(parseDiskStats(file('/proc/diskstats')))
+    with io.open('/proc/diskstats', 'rb') as f:
+        return dict(parseDiskStats(f))
 
 
 
@@ -354,61 +357,60 @@ hostname = socket.gethostname()
 assert hostname != 'localhost', "Fix your computro."
 
 def formatResults(name, sectorSize, before, after, error, timeout):
-    output = StringIO.StringIO()
-    jj = juice.Juice(issueGreeting=False)
-    tt = utils.FileWrapper(output)
-    jj.makeConnection(tt)
+    with io.BytesIO() as output:
+        jj = juice.Juice(issueGreeting=False)
+        tt = utils.FileWrapper(output)
+        jj.makeConnection(tt)
 
-    if after.partition is not None:
-        read_count = after.partition.readCount - before.partition.readCount
-        read_sectors = after.partition.readSectorCount - before.partition.readSectorCount
-        write_count = after.partition.writeCount - before.partition.writeCount
-        write_sectors = after.partition.writeSectorCount - before.partition.writeSectorCount
-    else:
-        read_count = None
-        read_sectors = None
-        write_count = None
-        write_sectors = None
+        if after.partition is not None:
+            read_count = after.partition.readCount - before.partition.readCount
+            read_sectors = after.partition.readSectorCount - before.partition.readSectorCount
+            write_count = after.partition.writeCount - before.partition.writeCount
+            write_sectors = after.partition.writeSectorCount - before.partition.writeSectorCount
+        else:
+            read_count = None
+            read_sectors = None
+            write_count = None
+            write_sectors = None
 
-    if after.disk is not None:
-        read_ms = after.disk.readMilliseconds - before.disk.readMilliseconds
-        write_ms = after.disk.writeMilliseconds - before.disk.writeMilliseconds
-    else:
-        read_ms = None
-        write_ms = None
+        if after.disk is not None:
+            read_ms = after.disk.readMilliseconds - before.disk.readMilliseconds
+            write_ms = after.disk.writeMilliseconds - before.disk.writeMilliseconds
+        else:
+            read_ms = None
+            write_ms = None
 
-    twisted_version = twisted.version.short()
-    epsilon_version = epsilon.version.short()
+        twisted_version = twisted.version.short()
+        epsilon_version = epsilon.version.short()
 
-    Results(
-        version=STATS_VERSION,
-        error=error,
-        timeout=timeout,
-        name=name,
-        host=hostname,
-        elapsed=after.time - before.time,
-        sector_size=sectorSize,
-        read_count=read_count,
-        read_sectors=read_sectors,
-        read_ms=read_ms,
-        write_count=write_count,
-        write_sectors=write_sectors,
-        write_ms=write_ms,
-        filesystem_growth=after.size - before.size,
-        python_version=unicode(sys.hexversion),
-        twisted_version=twisted_version,
-        divmod_version=epsilon_version,
-        ).do(jj, requiresAnswer=False)
-    return output.getvalue()
+        Results(
+            version=STATS_VERSION,
+            error=error,
+            timeout=timeout,
+            name=name,
+            host=hostname,
+            elapsed=after.time - before.time,
+            sector_size=sectorSize,
+            read_count=read_count,
+            read_sectors=read_sectors,
+            read_ms=read_ms,
+            write_count=write_count,
+            write_sectors=write_sectors,
+            write_ms=write_ms,
+            filesystem_growth=after.size - before.size,
+            python_version=six.text_type(sys.hexversion),
+            twisted_version=twisted_version,
+            divmod_version=epsilon_version,
+            ).do(jj, requiresAnswer=False)
+        return output.getvalue()
 
 
 
 def reportResults(results):
-    print results
-    print
-    fObj = file('output', 'ab')
-    fObj.write(results)
-    fObj.close()
+    print(results)
+    print()
+    with io.open('output', 'ab') as fObj:
+        fObj.write(results)
 
 
 
@@ -419,7 +421,7 @@ def discoverCurrentWorkingDevice(procMounts='/proc/self/mounts'):
     """
     possibilities = []
     cwd = os.getcwd()
-    with file(procMounts, 'rb') as f:
+    with io.open(procMounts, 'r') as f:
         for L in f:
             parts = L.split()
             if cwd.startswith(parts[1]):
@@ -447,7 +449,7 @@ def getOneSize(ch):
     """
     try:
         return ch.getsize()
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.ENOENT:
             # XXX FilePath is broken
             if os.path.islink(ch.path):
@@ -475,7 +477,7 @@ def _bench(name, workingPath, function):
             elif result.check(ProcessDied):
                 log.msg("Failing because Failure!")
                 pprint.pprint(result.value.output)
-                print result.value.exitCode, result.value.signal
+                print(result.value.exitCode, result.value.signal)
             else:
                 log.err(result)
         else:

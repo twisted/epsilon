@@ -10,9 +10,9 @@ setup(
     url="https://github.com/twisted/epsilon",
 
     install_requires=[
+        "six>=1.12.0",
         "zope.interface",
-        "Twisted>=13.2.0",
-        "PyOpenSSL>=0.13"
+        "Twisted[tls]>=13.2.0",
     ],
     packages=find_packages(),
     scripts=['bin/benchmark', 'bin/certcreate'],
