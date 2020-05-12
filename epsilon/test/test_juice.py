@@ -1,7 +1,6 @@
 # Copyright 2005 Divmod, Inc.  See LICENSE file for details
 
 import six
-from unittest import skipIf
 
 from epsilon import juice
 from epsilon.test import iosim
@@ -137,7 +136,7 @@ def connectedServerAndClient(ServerClass=lambda: SimpleSymmetricProtocol(True),
         *a, **kw)
 
 class TotallyDumbProtocol(protocol.Protocol):
-    buf = ''
+    buf = b''
     def dataReceived(self, data):
         self.buf += data
 
@@ -151,27 +150,25 @@ class LiteralJuice(juice.Juice):
         return
 
 class LiteralParsingTest(unittest.TestCase):
-    @skipIf(six.PY3, 'fails on PY3')
     def testBasicRequestResponse(self):
         c, s, p = connectedServerAndClient(ClientClass=TotallyDumbProtocol)
-        HELLO = 'abcdefg'
-        ASKTOK = 'hand-crafted-ask'
-        c.transport.write(("""-Command: HeLlO
+        HELLO = b'abcdefg'
+        ASKTOK = b'hand-crafted-ask'
+        c.transport.write((b"""-Command: HeLlO
 -Ask: %s
 Hello: %s
 World: this header is ignored
 
-""" % (ASKTOK, HELLO,)).replace('\n','\r\n'))
+""" % (ASKTOK, HELLO,)).replace(b'\n',b'\r\n'))
         p.flush()
         asserts = {'hello': HELLO,
                    '-answer': ASKTOK}
-        hdrs = [j.split(': ') for j in c.buf.split('\r\n')[:-2]]
+        hdrs = [j.split(b': ') for j in c.buf.split(b'\r\n')[:-2]]
         self.assertEquals(len(asserts), len(hdrs))
         for hdr in hdrs:
             k, v = hdr
-            self.assertEquals(v, asserts[k.lower()])
+            self.assertEquals(v, asserts[six.ensure_str(k).lower()])
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testParsingRoundTrip(self):
         c, s, p = connectedServerAndClient(ClientClass=lambda: LiteralJuice(False),
                                            ServerClass=lambda: LiteralJuice(True))
@@ -185,29 +182,27 @@ World: this header is ignored
         BLANKLINE = ('newline3', 'test\r\n\r\nblank\r\n\r\nline')
         BODYTEST = (juice.BODY, 'blah\r\n\r\ntesttest')
 
-        testData = [
-            [SIMPLE],
-            [SIMPLE, BODYTEST],
-            [SIMPLE, CE],
-            [SIMPLE, CR],
-            [SIMPLE, CE, CR, LF],
-            [CE, CR, LF],
-            [SIMPLE, NEWLINE, CE, NEWLINE2],
-            [BODYTEST, SIMPLE, NEWLINE]
-            ]
-
-        for test in testData:
+        def onetest(test):
             jb = juice.Box()
             jb.update(dict(test))
             jb.sendTo(c)
             p.flush()
             self.assertEquals(s.boxes[-1], jb)
 
-SWITCH_CLIENT_DATA = 'Success!'
-SWITCH_SERVER_DATA = 'No, really.  Success.'
+        onetest([SIMPLE])
+        onetest([SIMPLE, BODYTEST])
+        onetest([SIMPLE, CE])
+        onetest([SIMPLE, CR])
+        onetest([SIMPLE, CE, CR, LF])
+        onetest([CE, CR, LF])
+        onetest([SIMPLE, NEWLINE, CE, NEWLINE2])
+        onetest([BODYTEST, SIMPLE, NEWLINE])
+
+
+SWITCH_CLIENT_DATA = b'Success!'
+SWITCH_SERVER_DATA = b'No, really.  Success.'
 
 class AppLevelTest(unittest.TestCase):
-    @skipIf(six.PY3, 'fails on PY3')
     def testHelloWorld(self):
         c, s, p = connectedServerAndClient()
         L = []
@@ -216,7 +211,6 @@ class AppLevelTest(unittest.TestCase):
         p.flush()
         self.assertEquals(L[0]['hello'], HELLO)
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testHelloWorldCommand(self):
         c, s, p = connectedServerAndClient(
             ServerClass=lambda: SimpleSymmetricCommandProtocol(True),
@@ -227,7 +221,6 @@ class AppLevelTest(unittest.TestCase):
         p.flush()
         self.assertEquals(L[0]['hello'], HELLO)
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testHelloErrorHandling(self):
         L=[]
         c, s, p = connectedServerAndClient(ServerClass=lambda: SimpleSymmetricCommandProtocol(True),
@@ -238,7 +231,6 @@ class AppLevelTest(unittest.TestCase):
         L[0].trap(UnfriendlyGreeting)
         self.assertEquals(str(L[0].value), "Don't be a dick.")
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testJuiceListCommand(self):
         c, s, p = connectedServerAndClient(ServerClass=lambda: SimpleSymmetricCommandProtocol(True),
                                            ClientClass=lambda: SimpleSymmetricCommandProtocol(False))
@@ -252,7 +244,6 @@ class AppLevelTest(unittest.TestCase):
         okayCommand = Hello(Hello="What?")
         self.assertRaises(RuntimeError, Hello)
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testSupportsVersion1(self):
         c, s, p = connectedServerAndClient(ServerClass=lambda: juice.Juice(True),
                                            ClientClass=lambda: juice.Juice(False))
@@ -263,7 +254,6 @@ class AppLevelTest(unittest.TestCase):
         self.assertEquals(c.protocolVersion, 1)
         self.assertEquals(s.protocolVersion, 1)
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testProtocolSwitch(self, switcher=SimpleSymmetricCommandProtocol):
         self.testSucceeded = False
 
@@ -280,8 +270,8 @@ class AppLevelTest(unittest.TestCase):
             (serverSuccess, serverData), (clientSuccess, clientData) = results
             self.failUnless(serverSuccess)
             self.failUnless(clientSuccess)
-            self.assertEquals(''.join(serverData), SWITCH_CLIENT_DATA)
-            self.assertEquals(''.join(clientData), SWITCH_SERVER_DATA)
+            self.assertEquals(b''.join(serverData), SWITCH_CLIENT_DATA)
+            self.assertEquals(b''.join(clientData), SWITCH_SERVER_DATA)
             self.testSucceeded = True
 
         def cbSwitch(proto):
@@ -294,6 +284,5 @@ class AppLevelTest(unittest.TestCase):
             p.flush()
         self.failUnless(self.testSucceeded)
 
-    @skipIf(six.PY3, 'fails on PY3')
     def testProtocolSwitchDeferred(self):
         return self.testProtocolSwitch(switcher=DeferredSymmetricCommandProtocol)

@@ -102,9 +102,9 @@ class ModalType(type):
         implementations = {}
 
         keepAttrs = {'mode': initialMode}
-        for (k, v) in six.viewitems(attrs):
+        for (k, v) in six.iteritems(attrs):
             if isinstance(v, type) and issubclass(v, mode):
-                for (methName, methDef) in six.viewitems(v.__dict__):
+                for (methName, methDef) in six.iteritems(v.__dict__):
                     if methName not in ('__module__', '__file__', '__name__'):
                         implementations.setdefault(methName, {})[k] = methDef
             keepAttrs[k] = v

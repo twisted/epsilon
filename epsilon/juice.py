@@ -73,8 +73,7 @@ class JuiceBox(dict):
 
         L.append(delimiter)
         if BODY in self:
-            L.append(self[BODY])
-
+            L.append(six.ensure_binary(self[BODY]))
         return b''.join(L)
 
     def sendTo(self, proto):
@@ -168,7 +167,7 @@ class RemoteJuiceError(JuiceError):
 
 class UnhandledRemoteJuiceError(RemoteJuiceError):
     def __init__(self, description):
-        errorCode = "UNHANDLED"
+        errorCode = b"UNHANDLED"
         RemoteJuiceError.__init__(self, errorCode, description)
 
 class JuiceBoxError(JuiceError):
@@ -282,14 +281,15 @@ def parseJuiceHeaders(lines):
     Create a JuiceBox from a list of header lines.
 
     @param lines: a list of lines.
+    @type lines: a list of L{bytes}
     """
     b = JuiceBox()
     key = None
     for L in lines:
-        if L[0] == b' ':
+        if L[0:1] == b' ':
             # continuation
             assert key is not None
-            b[key] += b'\r\n'+L[1:]
+            b[key] += six.ensure_str(b'\r\n' + L[1:])
             continue
         parts = L.split(b': ', 1)
         if len(parts) != 2:
@@ -454,15 +454,16 @@ class JuiceList(Argument):
         self.subargs = subargs
 
     def fromStringProto(self, inString, proto):
-        boxes = parseString(inString)
+        boxes = parseString(six.ensure_binary(inString))
         values = [stringsToObjects(box, self.subargs, proto)
                   for box in boxes]
         return values
 
     def toStringProto(self, inObject, proto):
-        return ''.join([objectsToStrings(
-                    objects, self.subargs, Box(), proto
-                    ).serialize() for objects in inObject])
+        return b''.join([
+            objectsToStrings(objects, self.subargs, Box(), proto).serialize()
+            for objects in inObject
+        ])
 
 class ListOf(Argument):
     def __init__(self, subarg, delimiter=', '):
@@ -721,7 +722,7 @@ class Negotiate(Command):
     responseType = NegotiateBox
 
 
-class Juice(LineReceiver, JuiceParserBase):
+class Juice(LineReceiver, JuiceParserBase, object):
     """
     JUICE (JUice Is Concurrent Events) is a simple connection-oriented
     request/response protocol.  Packets, or "boxes", are collections of
@@ -737,7 +738,7 @@ class Juice(LineReceiver, JuiceParserBase):
     the value of the "-Command" header.
     """
 
-    protocolName = 'juice-base'
+    protocolName = b'juice-base'
 
     hostCertificate = None
 
@@ -813,8 +814,8 @@ class Juice(LineReceiver, JuiceParserBase):
         else:
             if debug:
                 log.msg("Juice send: %s" % pprint.pformat(dict(six.viewitems(completeBox))))
-
-            self.transport.write(completeBox.serialize())
+            result = completeBox.serialize()
+            self.transport.write(result)
 
     def sendCommand(self, command, __content='', __answer=True, **kw):
         box = JuiceBox(__content, **kw)
@@ -903,7 +904,7 @@ class Juice(LineReceiver, JuiceParserBase):
             else:
                 self._bodyBuffer.append(data)
                 extraData = ''
-            self._pendingBox['body'] = ''.join(self._bodyBuffer)
+            self._pendingBox['body'] = six.ensure_str(b''.join(six.ensure_binary(each) for each in self._bodyBuffer))
             self._bodyBuffer = None
             b, self._pendingBox = self._pendingBox, None
             self.juiceBoxReceived(b)

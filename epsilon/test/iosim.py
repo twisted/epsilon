@@ -65,11 +65,12 @@ class IOPump:
             print('.')
             # XXX slightly buggy in the face of incremental output
             if cData:
-                for line in cData.split('\r\n'):
-                    print('C: '+line)
+                for line in cData.split(b'\r\n'):
+                    print('C: ' + line)
+            print(repr(sData))
             if sData:
-                for line in sData.split('\r\n'):
-                    print('S: '+line)
+                for line in sData.split(b'\r\n'):
+                    print('S: ' + line)
         if cData:
             self.server.dataReceived(cData)
         if sData:
@@ -102,13 +103,14 @@ def _connectedServerAndClient(ServerClass, ClientClass,
     """
     c = ClientClass()
     s = ServerClass()
-    with io.BytesIO() as cio, io.BytesIO() as sio:
-        c.makeConnection(clientTransportWrapper(cio))
-        s.makeConnection(serverTransportWrapper(sio))
-        pump = IOPump(c, s, cio, sio, debug)
-        # kick off server greeting, etc
-        pump.flush()
-        yield c, s, pump
+    cio = io.BytesIO()
+    sio = io.BytesIO()
+    c.makeConnection(clientTransportWrapper(cio))
+    s.makeConnection(serverTransportWrapper(sio))
+    pump = IOPump(c, s, cio, sio, debug)
+    # kick off server greeting, etc
+    pump.flush()
+    yield c, s, pump
 
 
 class connectedServerAndClient(tuple):
