@@ -12,3 +12,7 @@ def asTwistedVersion(packageName, versionString):
 version = asTwistedVersion("epsilon", __version__)
 
 __all__ = ['__version__', 'version']
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
