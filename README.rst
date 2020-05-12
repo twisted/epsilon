@@ -1,6 +1,9 @@
-
 Divmod Epsilon
 ==============
+.. image:: https://travis-ci.org/twisted/epsilon.svg?branch=master
+    :target: https://travis-ci.org/twisted/epsilon
+.. image:: https://img.shields.io/pypi/v/Epsilon
+    :alt: PyPI
 
 Epsilon is a set of utility modules, commonly used by all Divmod projects.
 
