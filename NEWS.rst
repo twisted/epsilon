@@ -1,3 +1,8 @@
+0.8.0 (2020-08-05):
+  Major:
+
+  - Python 3 is now supported.
+
 0.7.3 (2018-06-24):
   Minor:
 
