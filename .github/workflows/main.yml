@@ -1,0 +1,34 @@
+name: Python package
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron:  '44 5 * * *'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [2.7, pypy2, 3.7, 3.8, pypy3]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Fetch tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Tox and any other packages
+        run: pip install tox
+      - name: Run Tox
+        run: tox -e py
+      - name: Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          name: gh-${{ matrix.python }}

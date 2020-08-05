@@ -1,6 +1,6 @@
 Divmod Epsilon
 ==============
-.. image:: https://travis-ci.org/twisted/epsilon.svg?branch=master
+.. image:: https://github.com/twisted/epsilon/workflows/Python%20package/badge.svg
     :target: https://travis-ci.org/twisted/epsilon
 .. image:: https://img.shields.io/pypi/v/Epsilon
     :alt: PyPI
