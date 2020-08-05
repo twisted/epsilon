@@ -53,7 +53,7 @@ def parseDiskStatLine(L):
         factory = partitionstat
     else:
         factory = diskstat
-    return six.ensure_str(device), factory(*map(int, parts[3:]))
+    return six.ensure_str(device), factory(*map(int, parts[3:15]))
 
 
 
