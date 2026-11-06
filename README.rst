@@ -10,3 +10,8 @@ Epsilon is a set of utility modules, commonly used by all Divmod projects.
 This is intended mainly as a support package for code used by Divmod projects,
 and not as an external library.  However, it contains many useful modules and
 you can feel free to use them!
+
+AI Policy
+---------
+
+Epsilon follows the `Twisted AI Policy <https://docs.twisted.org/en/latest/development/ai-policy.html>`_. This means this project does not allow the inclusion of the outputs of generative AI tools.
